@@ -75,6 +75,15 @@ export class TreeLayoutWindowManager extends Component {
                       id: '_root',
                       child: null, }
             }
+  componentDidUpdate(prevProps, prevState){
+    if (this.state.activeNodeId !== prevState.activeNodeId){
+
+      let [ node, parent ] = getNodeById(this.state.tree, null, this.state.activeNodeId);
+      if (node.kind === 'window'){
+        node.child.props['data-onRequestFocus']();
+      }
+    }
+  }
   focusWindow(key) {
     let [ node, parent ] = getNodeById(this.state.tree, null, key);
     node.lastActiveTime = this.state.lastActiveTime+1;
@@ -108,16 +117,19 @@ export class TreeLayoutWindowManager extends Component {
       child: win
     }
 
+    let activeNodeId;
     if (container.kind === 'root'){
       newNode.lastActiveTime = this.state.lastActiveTime+1;
-      this.setState({ activeNodeId: win.key });
+      activeNodeId = win.key
+      this.setState({  });
       container.child = newNode;
     }
     else {
+      activeNodeId = this.state.activeNodeId;
       container.children.push(newNode)
     }
 
-    this.setState({ tree: this.state.tree, lastActiveTime: this.state.lastActiveTime+1 });
+    this.setState({ tree: this.state.tree, lastActiveTime: this.state.lastActiveTime+1, activeNodeId: activeNodeId });
   }
   closeKey(key) {
     if (key == this.state.activeNodeId){
