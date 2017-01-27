@@ -119,6 +119,14 @@ export class TreeLayoutWindowManager extends Component {
 
     this.setState({ tree: this.state.tree, lastActiveTime: this.state.lastActiveTime+1 });
   }
+  closeKey(key) {
+    if (key == this.state.activeNodeId){
+      this.closeActive();
+    } else {
+      this._closeId(key);
+      this.setState({ tree: this.state.tree });
+    }
+  }
   closeActive() {
     let parentId = this._closeId(this.state.activeNodeId);
 
