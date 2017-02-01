@@ -134,6 +134,8 @@ function tabifyPositions(node, activeNodeId, onSwitchTab) {
     subWindowData.forEach((subSubWindowData, i) => {
 
       let tabSwitcher = {
+        internal: true,
+        tabChildren: iterKeys(subSubWindowData),
         position: {
           x: 1.0*i / subWindowData.length,
           y: 0.0,
@@ -163,9 +165,9 @@ function tabifyPositions(node, activeNodeId, onSwitchTab) {
       let r = Math.random();
       windowData[r] = tabSwitcher;
       if (i === mostRecentChild) {
-        children.push(<div key={r} style={{ backgroundColor: 'cyan' }}>arst</div>);
+        children.push(<div key={r} style={{ backgroundColor: '#448', color: 'white' }}>{'\u00A0'}</div>);
       } else {
-        children.push(<div key={r} onClick={switchTab} style={{ backgroundColor: 'navy' }}>arst</div>);
+        children.push(<div key={r} onClick={switchTab} style={{ backgroundColor: '#112', color: 'white' }}>{'\u00A0'}</div>);
       }
     });
 

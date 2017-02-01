@@ -126,7 +126,7 @@ export class TreeLayoutWindowManager extends Component {
     }
     else {
       activeNodeId = this.state.activeNodeId;
-      container.children.push(newNode)
+      container.children.push(newNode);
     }
 
     this.setState({ tree: this.state.tree, lastActiveTime: this.state.lastActiveTime+1, activeNodeId: activeNodeId });
@@ -327,6 +327,9 @@ export class TreeLayoutWindowManager extends Component {
     });
     if (dist_key.length > 0){
       let nextId = dist_key.sort()[0][2]
+      if (windowData[nextId].internal && windowData[nextId].tabChildren.length > 0){
+        return windowData[nextId].tabChildren[0];
+      }
       return nextId;
     } else {
       return null;
