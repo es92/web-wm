@@ -337,7 +337,7 @@ export class TreeLayoutWindowManager extends Component {
   }
   render() {
     return (
-      <TreeLayoutManager elemRef={ (r) => { this._dom_node = r; } } tree={this.state.tree} activeNodeId={this.state.activeNodeId} onSwitchTab={this.switchTabs.bind(this)}>
+      <TreeLayoutManager elemRef={ (r) => { if (r != null){ this._dom_node = r; } } } tree={this.state.tree} activeNodeId={this.state.activeNodeId} onSwitchTab={this.switchTabs.bind(this)}>
         { this.state.windows }
       </TreeLayoutManager>
     );
