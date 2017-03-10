@@ -22,8 +22,13 @@ class App extends Component {
       e.target.focus()
     };
 
+    let onRequestFocus = () => {
+
+    }
+
     let newWindow = <div tabIndex="0" 
                          key={key} 
+                         data-onRequestFocus={onRequestFocus}
                          onMouseOver={onMouseOver.bind(this, key)} 
                          onFocus={onFocus.bind(this, key)} 
                          style={{backgroundColor: color, width: '100%', height: '100%'}}>
@@ -35,6 +40,7 @@ class App extends Component {
     window.addEventListener('keydown', (e) => {
       if (!e.altKey){ return }
       e.preventDefault();
+      e.stopPropagation();
 
       if (e.key === 'Enter'){
         this.wm.makeNewWindow(this.makeTestWindow())
@@ -80,11 +86,8 @@ class App extends Component {
       this.wm.makeNewWindow(this.makeTestWindow());
       this.wm.makeNewWindow(this.makeTestWindow());
       this.wm.makeNewWindow(this.makeTestWindow());
-      this.wm.makeVerticalSplit()
       this.wm.makeNewWindow(this.makeTestWindow());
-      this.wm.makeVerticalSplit()
-      this.wm.makeNewWindow(this.makeTestWindow());
-      this.wm.closeActive()
+      this.wm.switchToTabs()
       setTimeout(() => {
         this.wm.moveActiveRight()
       }, 500);

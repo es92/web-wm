@@ -5,7 +5,7 @@ import React, { Component } from 'react';
 // ======================================================
 
 import TreeLayoutManager from './TreeLayout.js'
-import { treeToData as treeToData } from './TreeLayout.js'
+import { treeToData } from './TreeLayout.js'
 import type { Tree as LayoutTree } from './TreeLayout.js'
 
 type TreeLayoutWindowManagerState = {
@@ -15,7 +15,7 @@ type TreeLayoutWindowManagerState = {
 
 function genUUID() {
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-    let r = Math.random()*16|0, v = c == 'x' ? r : (r&0x3|0x8);
+    let r = Math.random()*16|0, v = c === 'x' ? r : (r&0x3|0x8);
     return v.toString(16);
   });
 }
@@ -132,7 +132,7 @@ export class TreeLayoutWindowManager extends Component {
     this.setState({ tree: this.state.tree, lastActiveTime: this.state.lastActiveTime+1, activeNodeId: activeNodeId });
   }
   closeKey(key) {
-    if (key == this.state.activeNodeId){
+    if (key === this.state.activeNodeId){
       this.closeActive();
     } else {
       this._closeId(key);
@@ -294,39 +294,79 @@ export class TreeLayoutWindowManager extends Component {
     let [ windowData, children ] = treeToData(this.state.tree, this.state.activeNodeId, null);
     let wmHeight = this._dom_node.clientHeight;
     let wmWidth = this._dom_node.clientWidth;
-
     let [ node, parent ] = getNodeById(this.state.tree, null, this.state.activeNodeId);
 
     let [ ax, ay, aw, ah ] = getNodeSize(node, windowData, wmWidth, wmHeight);
     let acx = ax + aw/2;
     let acy = ay + ah/2;
 
+    let notDistantTab = (child) => {
+      let data = windowData[child.key];
+      return !data.isTab || (Math.abs(data.tabPosition - data.activeTab) <= 1 && data.tabPosition !== data.activeTab);
+    };
+
     let dist_key = children.filter((child) => !windowData[child.key].hidden)
-                       .map((child) => {
-             let [ x, y, w, h ] = getNodeSize({ kind: 'window', id: child.key }, windowData, wmWidth, wmHeight);
-             let cx = x + w/2;
-             let cy = y + h/2;
-             let dist = Math.sqrt((acx - cx)*(acx - cx) + (acy - cy)*(acy - cy));
-             let angle = Math.atan2(-(cy - acy), cx - acx)*180/Math.PI;
-             if (angle < 0)
-               angle += 360;
-             return [ dist, angle, child.key ]
-            });
-    dist_key = dist_key.filter(([dist, angle, key], ) => {
-      if (key === this.state.activeNodeId){
-        return false;
-      } else if (dir === 'right') {
-        return angle > 270 || angle < 90;
-      } else if (dir === 'left'){
-        return angle < 270 && angle > 90;
-      } else if (dir === 'up'){
-        return angle < 180;
-      } else if (dir === 'down'){
-        return angle > 180;
-      }
-    });
+                           .filter((child) => notDistantTab(child))
+                           .filter((child) => child.key !== this.state.activeNodeId)
+                           .map((child) => {
+                             let [ x, y, w, h ] = getNodeSize({ kind: 'window', id: child.key }, windowData, wmWidth, wmHeight);
+                             const tabPosition = windowData[child.key].tabPosition;
+                             const activeTab = windowData[child.key].activeTab;
+                             let tabData;
+                             if (windowData[child.key].isTab){
+                               const tabPosition = windowData[child.key].tabPosition;
+                               const activeTab = windowData[child.key].activeTab;
+                               tabData = {
+                                 rightOfActive: tabPosition > activeTab,
+                                 leftOfActive: tabPosition < activeTab,
+                               }
+                             } else {
+                               tabData = null;
+                             }
+                             let cx = x + w/2;
+                             let cy = y + h/2;
+                             let dist = Math.sqrt((acx - cx)*(acx - cx) + (acy - cy)*(acy - cy));
+                             let angle = Math.atan2(-(cy - acy), cx - acx)*180/Math.PI;
+                             if (angle < 0)
+                               angle += 360;
+                             return { tabData: tabData, key: child.key, dist: dist, angle: angle }
+                           })
+                           .filter(({ tabData, key, dist, angle }) => {
+                             if (tabData != null){
+                               if (dir === 'left'){
+                                 return tabData.leftOfActive;
+                               } else if (dir === 'right'){
+                                 return tabData.rightOfActive;
+                               }
+                             }
+                             return true;
+                           })
+                           .filter(({ tabData, key, dist, angle }) => {
+                             if (tabData == null){
+                               if (dir === 'right') {
+                                 return angle > 270 || angle < 90;
+                               } else if (dir === 'left'){
+                                 return angle < 270 && angle > 90;
+                               } else if (dir === 'up'){
+                                 return angle < 180;
+                               } else if (dir === 'down'){
+                                 return angle > 180;
+                               }
+                             }
+                             return true;
+                           })
+                           .sort(function(a, b){
+                             if (a.dist < b.dist){
+                               return -1;
+                             } else if (a.dist > b.dist){
+                               return 1;
+                             } else {
+                               return 0;
+                             }
+                           });
+
     if (dist_key.length > 0){
-      let nextId = dist_key.sort()[0][2]
+      let nextId = dist_key[0].key;
       if (windowData[nextId].internal && windowData[nextId].tabChildren.length > 0){
         return windowData[nextId].tabChildren[0];
       }
