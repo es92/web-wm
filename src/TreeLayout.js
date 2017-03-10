@@ -119,7 +119,7 @@ function tabifyPositions(node, activeNodeId, onSwitchTab) {
 
   if (children.length > 1){
 
-    let tabHeight = 20;
+    let tabHeight = 10;
 
     subWindowData.forEach(subWindowData => {
       iterKeys(subWindowData).forEach(key => {
@@ -134,6 +134,9 @@ function tabifyPositions(node, activeNodeId, onSwitchTab) {
     subWindowData.forEach((subSubWindowData, i) => {
 
       let tabSwitcher = {
+        isTab: true,
+        tabPosition: i,
+        activeTab: mostRecentChild,
         internal: true,
         tabChildren: iterKeys(subSubWindowData),
         position: {
@@ -165,9 +168,9 @@ function tabifyPositions(node, activeNodeId, onSwitchTab) {
       let r = Math.random();
       windowData[r] = tabSwitcher;
       if (i === mostRecentChild) {
-        children.push(<div key={r} style={{ backgroundColor: '#448', color: 'white' }}>{'\u00A0'}</div>);
+        children.push(<div key={r} style={{ height: tabHeight, backgroundColor: '#448', color: 'white' }}>{'\u00A0'}</div>);
       } else {
-        children.push(<div key={r} onClick={switchTab} style={{ backgroundColor: '#112', color: 'white' }}>{'\u00A0'}</div>);
+        children.push(<div key={r} onClick={switchTab} style={{ height: tabHeight, backgroundColor: '#112', color: 'white' }}>{'\u00A0'}</div>);
       }
     });
 
@@ -187,15 +190,11 @@ function tabifyPositions(node, activeNodeId, onSwitchTab) {
     windowData[key] = mostRecentSubWindowData[key];
   });
 
-
-
-
-
   return [ windowData, children ];
 }
 
-const borderStyleActive = '4px solid cyan';
-const borderStyleInactive = '4px solid navy'; 
+const borderStyleActive = '2px solid #448';
+const borderStyleInactive = '2px solid #112'; 
 function emptyRect () { 
   return { x: 0, y: 0, w: 0, h: 0 };
 }
