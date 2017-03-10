@@ -47,10 +47,11 @@ function iterKeys(obj) {
   return keys;
 }
 
-function verticalShrinkWindowPositions(windowData, i, n) {
+function verticalShrinkWindowPositions(windowData, i, n, depth) {
   var shrunkWindowData = {}
   iterKeys(windowData).forEach(key => {
     shrunkWindowData[key] = {
+      depth: depth,
       position: {
         x: windowData[key].position.x,
         y: i/n + windowData[key].position.y/n,
@@ -66,10 +67,11 @@ function verticalShrinkWindowPositions(windowData, i, n) {
   return shrunkWindowData;
 }
 
-function horizontalShrinkWindowPositions(windowData, i, n) {
+function horizontalShrinkWindowPositions(windowData, i, n, depth) {
   var shrunkWindowData = {}
   iterKeys(windowData).forEach(key => {
     shrunkWindowData[key] = {
+      depth: depth,
       position: {
         x: i/n + windowData[key].position.x/n,
         y: windowData[key].position.y,
@@ -85,12 +87,12 @@ function horizontalShrinkWindowPositions(windowData, i, n) {
   return shrunkWindowData;
 }
 
-function shrinkWindowPositions(node, shrinker, activeNodeId, onSwitchTab) {
-  let childData = node.children.map(child => treeToData(child, activeNodeId, onSwitchTab));
+function shrinkWindowPositions(node, shrinker, activeNodeId, onSwitchTab, depth) {
+  let childData = node.children.map(child => treeToData(child, activeNodeId, onSwitchTab, depth+1));
   let children = childData.map(([ childData, children ]) => children);
   children = [].concat.apply([], children);
 
-  let subWindowData = childData.map(([ subWindowData, children ], i) => shrinker(subWindowData, i, childData.length));
+  let subWindowData = childData.map(([ subWindowData, children ], i) => shrinker(subWindowData, i, childData.length, depth));
 
   let windowData = {};
 
@@ -103,8 +105,8 @@ function shrinkWindowPositions(node, shrinker, activeNodeId, onSwitchTab) {
   return [ windowData, children ];
 }
 
-function tabifyPositions(node, activeNodeId, onSwitchTab) {
-  let childData = node.children.map(child => treeToData(child, activeNodeId, onSwitchTab));
+function tabifyPositions(node, activeNodeId, onSwitchTab, depth) {
+  let childData = node.children.map(child => treeToData(child, activeNodeId, onSwitchTab, depth+1));
   let children = childData.map(([ childData, children ]) => children);
   children = [].concat.apply([], children);
 
@@ -130,11 +132,11 @@ function tabifyPositions(node, activeNodeId, onSwitchTab) {
       });
     });
 
-
     subWindowData.forEach((subSubWindowData, i) => {
 
       let tabSwitcher = {
         isTab: true,
+        depth: depth,
         tabPosition: i,
         activeTab: mostRecentChild,
         internal: true,
@@ -199,7 +201,7 @@ function emptyRect () {
   return { x: 0, y: 0, w: 0, h: 0 };
 }
 
-export function treeToData(node, activeNodeId, onSwitchTab) {
+export function treeToData(node, activeNodeId, onSwitchTab, depth) {
   if (node.kind === 'window'){
     var windowData = {}
     windowData[node.child.key] = {};
@@ -219,6 +221,7 @@ export function treeToData(node, activeNodeId, onSwitchTab) {
     windowData[node.child.key].lastActiveTime = node.lastActiveTime;
     windowData[node.child.key].hidden = false;
     windowData[node.child.key].pposition = emptyRect();
+    windowData[node.child.key].depth = depth;
     windowData[node.child.key].position = {
       x: 0,
       y: 0,
@@ -227,20 +230,20 @@ export function treeToData(node, activeNodeId, onSwitchTab) {
     }
     return [ windowData, [ node.child ] ];
   } else if (node.kind === 'root'){
-    return treeToData(node.child, activeNodeId, onSwitchTab);
+    return treeToData(node.child, activeNodeId, onSwitchTab, depth+1);
   } else if (node.kind === 'horizontal'){
-    return shrinkWindowPositions(node, horizontalShrinkWindowPositions, activeNodeId, onSwitchTab);
+    return shrinkWindowPositions(node, horizontalShrinkWindowPositions, activeNodeId, onSwitchTab, depth+1);
   } else if (node.kind === 'vertical'){
-    return shrinkWindowPositions(node, verticalShrinkWindowPositions, activeNodeId, onSwitchTab);
+    return shrinkWindowPositions(node, verticalShrinkWindowPositions, activeNodeId, onSwitchTab, depth+1);
   } else {
-    return tabifyPositions(node, activeNodeId, onSwitchTab);
+    return tabifyPositions(node, activeNodeId, onSwitchTab, depth+1);
   }
 }
 
 export default function TreeLayoutManager({ elemRef, activeNodeId, tree, onSwitchTab }: TreeLayoutProps) {
   let windowData, children;
   if (tree.child != null){
-    [ windowData, children ] = treeToData(tree, activeNodeId, onSwitchTab);
+    [ windowData, children ] = treeToData(tree, activeNodeId, onSwitchTab, 0);
   }
   else {
     [ windowData, children ] = [ {}, [] ];

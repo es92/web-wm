@@ -291,7 +291,7 @@ export class TreeLayoutWindowManager extends Component {
     }
   }
   getInDirection(dir){
-    let [ windowData, children ] = treeToData(this.state.tree, this.state.activeNodeId, null);
+    let [ windowData, children ] = treeToData(this.state.tree, this.state.activeNodeId, null, 0);
     let wmHeight = this._dom_node.clientHeight;
     let wmWidth = this._dom_node.clientWidth;
     let [ node, parent ] = getNodeById(this.state.tree, null, this.state.activeNodeId);
@@ -323,13 +323,14 @@ export class TreeLayoutWindowManager extends Component {
                              } else {
                                tabData = null;
                              }
+                             const depth = windowData[child.key].depth;
                              let cx = x + w/2;
                              let cy = y + h/2;
                              let dist = Math.sqrt((acx - cx)*(acx - cx) + (acy - cy)*(acy - cy));
                              let angle = Math.atan2(-(cy - acy), cx - acx)*180/Math.PI;
                              if (angle < 0)
                                angle += 360;
-                             return { tabData: tabData, key: child.key, dist: dist, angle: angle }
+                             return { tabData: tabData, key: child.key, dist: dist, angle: angle, depth: depth }
                            })
                            .filter(({ tabData, key, dist, angle }) => {
                              if (tabData != null){
@@ -356,7 +357,11 @@ export class TreeLayoutWindowManager extends Component {
                              return true;
                            })
                            .sort(function(a, b){
-                             if (a.dist < b.dist){
+                             if (a.depth < b.depth){
+                               return 1
+                             } else if (a.depth < b.depth){
+                               return -1;
+                             } else if (a.dist < b.dist){
                                return -1;
                              } else if (a.dist > b.dist){
                                return 1;
@@ -364,6 +369,8 @@ export class TreeLayoutWindowManager extends Component {
                                return 0;
                              }
                            });
+
+    //console.log(dist_key);
 
     if (dist_key.length > 0){
       let nextId = dist_key[0].key;
