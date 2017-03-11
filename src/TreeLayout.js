@@ -105,6 +105,18 @@ function shrinkWindowPositions(node, shrinker, activeNodeId, onSwitchTab, depth)
   return [ windowData, children ];
 }
 
+function lastActiveDescendant(node){
+  if (node.kind === 'window'){
+    return node.lastActiveTime;
+  } else if (node.kind == 'root'){
+    return node.lastActiveTime;
+  } else if (node.kind === 'vertical' || node.kind === 'horizontal' || node.kind === 'tab') {
+    let times = node.children.map(lastActiveDescendant);
+    times.push(node.lastActiveTime);
+    return Math.max(...times);
+  }
+}
+
 function tabifyPositions(node, activeNodeId, onSwitchTab, depth) {
   let childData = node.children.map(child => treeToData(child, activeNodeId, onSwitchTab, depth+1));
   let children = childData.map(([ childData, children ]) => children);
@@ -114,8 +126,7 @@ function tabifyPositions(node, activeNodeId, onSwitchTab, depth) {
 
   let windowData = {}
 
-
-  let childrenLastActiveTime = node.children.map(child => child.lastActiveTime)
+  let childrenLastActiveTime = node.children.map(child => lastActiveDescendant(child));
 
   let mostRecentChild = childrenLastActiveTime.indexOf(Math.max(...childrenLastActiveTime));
 

@@ -87,7 +87,12 @@ class App extends Component {
       this.wm.makeNewWindow(this.makeTestWindow());
       this.wm.makeNewWindow(this.makeTestWindow());
       this.wm.makeNewWindow(this.makeTestWindow());
+      this.wm.makeHorizontalSplit()
+      this.wm.makeNewWindow(this.makeTestWindow());
+      this.wm.moveActiveFocusRight()
+      this.wm.moveActiveFocusRight()
       this.wm.switchToTabs()
+      this.wm.moveActiveFocusLeft()
       setTimeout(() => {
         this.wm.moveActiveRight()
       }, 500);

@@ -285,9 +285,13 @@ export class TreeLayoutWindowManager extends Component {
     this.moveActiveFocusInDirection('up');
   }
   moveActiveFocusInDirection(dir){ 
-    let nextId = this.getInDirection(dir);
+    let [ nextId, windowData ] = this.getInDirection(dir);
     if (nextId != null){
-      this.focusWindow(nextId);
+      if (windowData[nextId].internal && windowData[nextId].tabChildren.length > 0){
+        this.focusWindow(windowData[nextId].tabChildren[0]);
+      } else {
+        this.focusWindow(nextId);
+      }
     }
   }
   getInDirection(dir){
@@ -374,12 +378,19 @@ export class TreeLayoutWindowManager extends Component {
 
     if (dist_key.length > 0){
       let nextId = dist_key[0].key;
-      if (windowData[nextId].internal && windowData[nextId].tabChildren.length > 0){
-        return windowData[nextId].tabChildren[0];
-      }
-      return nextId;
+      //if (windowData[nextId].internal && windowData[nextId].tabChildren.length > 0){
+      //  console.log(windowData[nextId].tabChildren);
+      //  if (dir == 'right'){
+      //    nextId = windowData[nextId].tabChildren[windowData[nextId].tabChildren.length-1];
+      //  } else {
+      //    nextId = windowData[nextId].tabChildren[0];
+      //  }
+      //  console.log('h', nextId, windowData[nextId])
+      //  return nextId;
+      //}
+      return [ nextId, windowData ];
     } else {
-      return null;
+      return [ null, null ];
     }
   }
   render() {
