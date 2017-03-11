@@ -363,8 +363,8 @@ export class TreeLayoutWindowManager extends Component {
                            })
                            .sort(function(a, b){
                              if (a.depth < b.depth){
-                               return 1
-                             } else if (a.depth < b.depth){
+                               return 1;
+                             } else if (a.depth > b.depth){
                                return -1;
                              } else if (a.dist < b.dist){
                                return -1;

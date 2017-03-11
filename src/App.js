@@ -95,7 +95,6 @@ class App extends Component {
       this.wm.moveActiveFocusLeft()
       this.wm.switchToTabs()
       this.wm.moveActiveFocusRight()
-      this.wm.moveActiveFocusLeft()
       setTimeout(() => {
         this.wm.moveActiveRight()
       }, 500);
