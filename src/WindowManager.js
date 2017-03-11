@@ -288,9 +288,16 @@ export class TreeLayoutWindowManager extends Component {
     let [ nextId, windowData ] = this.getInDirection(dir);
     if (nextId != null){
       if (windowData[nextId].internal && windowData[nextId].tabChildren.length > 0){
-        let i = 0;
-        while (getNodeById(this.state.tree, null, windowData[nextId].tabChildren[i++]) == null);
-        nextId = windowData[nextId].tabChildren[i-1];
+        let i = 0
+        let idir = 1;
+        if (dir == 'left'){
+          i = windowData[nextId].tabChildren.length-1
+          idir = -1;
+        }
+        while (getNodeById(this.state.tree, null, windowData[nextId].tabChildren[i]) == null){
+          i += idir;
+        }
+        nextId = windowData[nextId].tabChildren[i];
       }
       this.focusWindow(nextId);
     }
