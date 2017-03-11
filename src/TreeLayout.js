@@ -50,19 +50,13 @@ function iterKeys(obj) {
 function verticalShrinkWindowPositions(windowData, i, n, depth) {
   var shrunkWindowData = {}
   iterKeys(windowData).forEach(key => {
-    shrunkWindowData[key] = {
-      depth: depth,
-      position: {
-        x: windowData[key].position.x,
-        y: i/n + windowData[key].position.y/n,
-        w: windowData[key].position.w,
-        h: windowData[key].position.h/n,
-      },
-      pposition: windowData[key].pposition,
-      lastActiveTime: windowData[key].lastActiveTime,
-      hidden: windowData[key].hidden,
-      border: windowData[key].border,
-    }
+    shrunkWindowData[key] = { ...windowData[key] };
+    shrunkWindowData[key].position = {
+      x: windowData[key].position.x,
+      y: i/n + windowData[key].position.y/n,
+      w: windowData[key].position.w,
+      h: windowData[key].position.h/n,
+    };
   });
   return shrunkWindowData;
 }
@@ -70,19 +64,13 @@ function verticalShrinkWindowPositions(windowData, i, n, depth) {
 function horizontalShrinkWindowPositions(windowData, i, n, depth) {
   var shrunkWindowData = {}
   iterKeys(windowData).forEach(key => {
-    shrunkWindowData[key] = {
-      depth: depth,
-      position: {
-        x: i/n + windowData[key].position.x/n,
-        y: windowData[key].position.y,
-        w: windowData[key].position.w/n,
-        h: windowData[key].position.h,
-      },
-      pposition: windowData[key].pposition,
-      lastActiveTime: windowData[key].lastActiveTime,
-      hidden: windowData[key].hidden,
-      border: windowData[key].border,
-    }
+    shrunkWindowData[key] = { ...windowData[key] };
+    shrunkWindowData[key].position = {
+      x: i/n + windowData[key].position.x/n,
+      y: windowData[key].position.y,
+      w: windowData[key].position.w/n,
+      h: windowData[key].position.h,
+    };
   });
   return shrunkWindowData;
 }
