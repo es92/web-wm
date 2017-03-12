@@ -37,6 +37,39 @@ class App extends Component {
     return newWindow
   }
   componentDidMount() {
+
+   let mousedown = false;
+   let last_mouse_x = -1;
+   let last_mouse_y = -1;
+   let active_node_id = null;
+
+    window.addEventListener('mousedown', (e) => { 
+      last_mouse_x = e.clientX;
+      last_mouse_y = e.clientY;
+      active_node_id = this.wm.state.activeNodeId;
+      mousedown = true;
+    });
+    window.addEventListener('mouseup', (e) => { mousedown = false; });
+    window.addEventListener('dragend', (e) => { mousedown = false; });
+    window.addEventListener('mouseleave', (e) => { mousedown = false; });
+
+    window.oncontextmenu = (e) => { 
+      if (e.altKey)
+        return false;
+    };
+
+    window.addEventListener('mousemove', (e) => {
+      if (mousedown && e.altKey){
+        let dx = e.clientX - last_mouse_x;
+        let dy = e.clientY - last_mouse_y;
+
+        this.wm.changeSizeByPixels(active_node_id, dx, dy, e.clientX, e.clientY);
+
+        last_mouse_x = e.clientX;
+        last_mouse_y = e.clientY;
+      }
+    });
+
     window.addEventListener('keydown', (e) => {
       if (!e.altKey){ return }
       e.preventDefault();
@@ -92,8 +125,8 @@ class App extends Component {
     setTimeout(() => {
       this.wm.makeNewWindow(this.makeTestWindow());
       this.wm.makeNewWindow(this.makeTestWindow());
-      this.wm.makeHorizontalSplit()
-      this.wm.changeActiveSize(-.1);
+      this.wm.makeNewWindow(this.makeTestWindow());
+      //this.wm.changeSizeByPixels(this.wm.state.activeNodeId, 10, 10, 10, 10);
       setTimeout(() => {
         this.wm.moveActiveRight()
       }, 500);

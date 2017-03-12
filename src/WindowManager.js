@@ -59,6 +59,12 @@ function getNodeSize(node, windowData, wmWidth, wmHeight){
     let h = wmHeight*d.position.h + d.pposition.h;
 
     return [ x, y, w, h ];
+  } else if (node.kind === 'horizontal' || node.kind === 'vertical' || node.kind == 'tab'){
+    let child_sizes = node.children.map((c) => getNodeSize(c, windowData, wmWidth, wmHeight));
+    let child_boxes = child_sizes.map(([x, y, w, h]) => [ x, y, x+w, y+h ]);
+    let [ x, y, w, h ] = child_boxes.reduce(([l1, t1, r1, b1], [l2, t2, r2, b2]) => [ Math.min(l1, l2), Math.min(t1, t2), Math.max(r1, r2), Math.max(b1, b2) ]);
+    return [ x, y, w, h ];
+
   } else {
     console.log(node);
     throw new Error('nyi');
@@ -263,6 +269,55 @@ export class TreeLayoutWindowManager extends Component {
     child.lastActiveTime = this.state.lastActiveTime + 1;
     this.setState({ activeNodeId: childId, tree: this.state.tree, lastActiveTime: this.state.lastActiveTime + 1 });
   }
+  changeSizeByPixels(node_id, dx, dy, x, y){
+    let [ node, parent ] = getNodeById(this.state.tree, null, node_id);
+
+    if ((parent.kind === 'horizontal' || parent.kind === 'vertical') && parent.sizes.length > 1){
+
+      let [ windowData, children ] = treeToData(this.state.tree, node_id, null, 0);
+      let wmHeight = this._dom_node.clientHeight;
+      let wmWidth = this._dom_node.clientWidth;
+
+      let [ pax, pay, paw, pah ] = getNodeSize(parent, windowData, wmWidth, wmHeight);
+
+      let idx = parent.children.indexOf(node);
+      let change_side;
+      if (idx == 0){
+        change_side = 1;
+      } else if (idx == parent.children.length-1){
+        change_side = -1;
+      } else {
+        let [ ax, ay, aw, ah ] = getNodeSize(node, windowData, wmWidth, wmHeight);
+
+        let dist_neg;
+        let dist_pos;
+        if (parent.kind === 'horizontal'){
+          dist_neg = x - ax;
+          dist_pos = ax + aw - x;
+        } else if (parent.kind === 'vertical'){
+          dist_neg = y - ay;
+          dist_pos = ay + ah - y;
+        }
+        change_side = dist_neg < dist_pos ? -1 : 1;
+      }
+      let delta;
+      if (parent.kind === 'horizontal'){
+        delta = dx / paw*change_side;
+      } else if (parent.kind === 'vertical'){
+        delta = dy / pah*change_side;
+      }
+      let min_size = .01;
+      if (parent.sizes[idx] + delta < min_size){
+        delta = min_size - parent.sizes[idx];
+      }
+      if (parent.sizes[idx + change_side] - delta < min_size){
+        delta = parent.sizes[idx + change_side] - min_size;
+      }
+      parent.sizes[idx] += delta;
+      parent.sizes[idx + change_side] -= delta;
+      this.setState({ tree: this.state.tree });
+    }
+  }
   changeActiveSize(delta) {
     let [ node, parent ] = getNodeById(this.state.tree, null, this.state.activeNodeId);
     if ((parent.kind === 'horizontal' || parent.kind === 'vertical') && parent.sizes.length > 1){
@@ -288,8 +343,8 @@ export class TreeLayoutWindowManager extends Component {
           parent.sizes[i] = min_size;
         }
       });
+      this.setState({ tree: this.state.tree });
     }
-    this.setState({ tree: this.state.tree });
   }
   moveActiveRight(){
     this.moveActiveInDirection('right');
