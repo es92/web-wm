@@ -98,6 +98,7 @@ export class TreeLayoutWindowManager extends Component {
       if (parent.kind === 'root'){
         container = {
           kind: 'horizontal',
+          sizes: [ 1 ],
           lastActiveTime: -1,
           id: genUUID(),
           children: [ node ]
@@ -127,6 +128,8 @@ export class TreeLayoutWindowManager extends Component {
     else {
       activeNodeId = this.state.activeNodeId;
       container.children.push(newNode);
+      container.sizes = container.sizes.map((s) => { return s*(container.children.length-1)/(container.children.length) });
+      container.sizes.push(1./container.children.length);
     }
 
     this.setState({ tree: this.state.tree, lastActiveTime: this.state.lastActiveTime+1, activeNodeId: activeNodeId });
@@ -171,6 +174,9 @@ export class TreeLayoutWindowManager extends Component {
       if (parent.children.length === 0){
         parentId = this._closeId(parentId);
       }
+      let rm_size = parent.sizes[idx]
+      parent.sizes.splice(idx, 1);
+      parent.sizes = parent.sizes.map((s) => s + rm_size/(parent.children.length));
     }
     return parentId;
   }
@@ -192,6 +198,7 @@ export class TreeLayoutWindowManager extends Component {
       const newNode = {
         kind: kind,
         lastActiveTime: -1,
+        sizes: [ 1 ],
         id: genUUID(),
         children: [ node ],
       }
@@ -255,6 +262,34 @@ export class TreeLayoutWindowManager extends Component {
     let childId = child.id;
     child.lastActiveTime = this.state.lastActiveTime + 1;
     this.setState({ activeNodeId: childId, tree: this.state.tree, lastActiveTime: this.state.lastActiveTime + 1 });
+  }
+  changeActiveSize(delta) {
+    let [ node, parent ] = getNodeById(this.state.tree, null, this.state.activeNodeId);
+    if ((parent.kind === 'horizontal' || parent.kind === 'vertical') && parent.sizes.length > 1){
+      let idx = parent.children.indexOf(node);
+      let min_size = .01;
+      if (parent.sizes[idx] + delta < min_size){
+        delta = min_size - parent.sizes[idx];
+      } else if (1 - (parent.sizes[idx] + delta) < min_size*(parent.sizes.length-1)){
+        delta = 1 - parent.sizes[idx] - min_size*(parent.sizes.length-1)
+      }
+      parent.sizes[idx] += delta;
+      let size_idxs = parent.sizes.map((s, i) => [ s, i ])
+                                  .filter((s,i) => i != idx);
+      size_idxs = size_idxs.sort();
+      let deltas = Array(size_idxs.length).fill(delta / (parent.sizes.length-1));
+      size_idxs.forEach(([s, i], j) => {
+        parent.sizes[i] = parent.sizes[i] - deltas[j];
+        if (parent.sizes[i] < min_size){
+          let extra = min_size - parent.sizes[i];
+          for (let k = j+1; k < deltas.length; k++){
+            deltas[k] += extra / (deltas.length-(j+1));
+          }
+          parent.sizes[i] = min_size;
+        }
+      });
+    }
+    this.setState({ tree: this.state.tree });
   }
   moveActiveRight(){
     this.moveActiveInDirection('right');

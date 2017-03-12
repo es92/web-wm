@@ -42,7 +42,14 @@ class App extends Component {
       e.preventDefault();
       e.stopPropagation();
 
-      if (e.key === 'Enter'){
+      if (e.ctrlKey){ 
+        if (e.key === 'n'){
+          this.wm.changeActiveSize(-.1);
+        } else if (e.key === 'i'){
+          this.wm.changeActiveSize(.1);
+        }     
+
+      } else if (e.key === 'Enter'){
         this.wm.makeNewWindow(this.makeTestWindow())
 
       } else if (e.key === 'f'){
@@ -85,21 +92,8 @@ class App extends Component {
     setTimeout(() => {
       this.wm.makeNewWindow(this.makeTestWindow());
       this.wm.makeNewWindow(this.makeTestWindow());
-      this.wm.makeNewWindow(this.makeTestWindow());
-      this.wm.makeNewWindow(this.makeTestWindow());
       this.wm.makeHorizontalSplit()
-      this.wm.makeNewWindow(this.makeTestWindow());
-      this.wm.moveActiveFocusRight()
-      this.wm.moveActiveFocusRight()
-      this.wm.switchToTabs()
-      this.wm.moveActiveFocusLeft()
-      this.wm.makeHorizontalSplit()
-      this.wm.makeNewWindow(this.makeTestWindow());
-      this.wm.switchToTabs()
-      this.wm.moveActiveFocusRight()
-      this.wm.makeHorizontalSplit()
-      this.wm.makeNewWindow(this.makeTestWindow());
-      this.wm.switchToTabs()
+      this.wm.changeActiveSize(-.1);
       setTimeout(() => {
         this.wm.moveActiveRight()
       }, 500);

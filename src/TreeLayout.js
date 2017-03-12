@@ -47,28 +47,28 @@ function iterKeys(obj) {
   return keys;
 }
 
-function verticalShrinkWindowPositions(windowData, i, n, depth) {
+function verticalShrinkWindowPositions(windowData, [ start, end ], n, depth) {
   var shrunkWindowData = {}
   iterKeys(windowData).forEach(key => {
     shrunkWindowData[key] = { ...windowData[key] };
     shrunkWindowData[key].position = {
       x: windowData[key].position.x,
-      y: i/n + windowData[key].position.y/n,
+      y: start + windowData[key].position.y*(end - start),
       w: windowData[key].position.w,
-      h: windowData[key].position.h/n,
+      h: windowData[key].position.h*(end - start),
     };
   });
   return shrunkWindowData;
 }
 
-function horizontalShrinkWindowPositions(windowData, i, n, depth) {
+function horizontalShrinkWindowPositions(windowData, [ start, end ], n, depth) {
   var shrunkWindowData = {}
   iterKeys(windowData).forEach(key => {
     shrunkWindowData[key] = { ...windowData[key] };
     shrunkWindowData[key].position = {
-      x: i/n + windowData[key].position.x/n,
+      x: start + windowData[key].position.x*(end - start),
       y: windowData[key].position.y,
-      w: windowData[key].position.w/n,
+      w: windowData[key].position.w*(end - start),
       h: windowData[key].position.h,
     };
   });
@@ -80,7 +80,13 @@ function shrinkWindowPositions(node, shrinker, activeNodeId, onSwitchTab, depth)
   let children = childData.map(([ childData, children ]) => children);
   children = [].concat.apply([], children);
 
-  let subWindowData = childData.map(([ subWindowData, children ], i) => shrinker(subWindowData, i, childData.length, depth));
+  let dividers = node.sizes.reduce((a,b) => a.concat([b+a[a.length-1]]), [0]);
+  let starts = dividers.slice(0,dividers.length-1);
+  let ends = dividers.slice(1,dividers.length);
+
+  let positions = starts.map((a,i) => [ starts[i], ends[i] ]);
+
+  let subWindowData = childData.map(([ subWindowData, children ], i) => shrinker(subWindowData, positions[i], childData.length, depth));
 
   let windowData = {};
 
