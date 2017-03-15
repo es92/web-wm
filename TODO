@@ -1,0 +1,20 @@
+
+
+workspace support
+
+shared cross tab state? Is this possible?
+
+higher level active wm nodes
+  - move groups of nodes at a time
+  - close groups of nodes at a time
+
+- change movement behavior
+  - regroup nodes, ex:
+        _ _
+        ___
+  - move top right right means:
+        _ |
+        _ |
+  - basically
+    if there isn't a node to switch with, make new parent so can make that element the dir-most element in the parent-group
+normal floating layout / manager
