@@ -129,7 +129,7 @@ class App extends Component {
       //this.wm.changeSizeByPixels(this.wm.state.activeNodeId, 10, 10, 10, 10);
       setTimeout(() => {
         this.wm.moveActiveRight()
-      }, 500);
+      }, 2000);
     }, 500);
   }
   render() {

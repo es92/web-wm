@@ -359,9 +359,26 @@ export class TreeLayoutWindowManager extends Component {
     this.moveActiveInDirection('up');
   }
   moveActiveInDirection(dir){ 
-    console.log('huh?');
+    let [ nextId, windowData ] = this.getInDirection(dir);
+    if (nextId != null){
+      this.swapNodes(this.state.activeNodeId, nextId);
+    }
   }
+  swapNodes(id1, id2){
+    let [ node1, parent1 ] = getNodeById(this.state.tree, null, id1);
+    let [ node2, parent2 ] = getNodeById(this.state.tree, null, id2);
+    if (    (parent1.kind === 'vertical' || parent1.kind === 'horizontal' || parent1.kind === 'tab')
+         && (parent2.kind === 'vertical' || parent2.kind === 'horizontal' || parent2.kind === 'tab')){
 
+      let idx1 = parent1.children.indexOf(node1);
+      let idx2 = parent2.children.indexOf(node2);
+      parent1.children[idx1] = node2;
+      parent2.children[idx2] = node1;
+    } else {
+      throw new Error('nyi ' + parent1.kind + ' ' + parent2.kind);
+    }
+    this.setState({ tree: this.state.tree });
+  }
   moveActiveFocusRight(){
     this.moveActiveFocusInDirection('right');
   }
@@ -377,18 +394,6 @@ export class TreeLayoutWindowManager extends Component {
   moveActiveFocusInDirection(dir){ 
     let [ nextId, windowData ] = this.getInDirection(dir);
     if (nextId != null){
-      if (windowData[nextId].internal && windowData[nextId].tabChildren.length > 0){
-        let i = 0
-        let idir = 1;
-        if (dir == 'left'){
-          i = windowData[nextId].tabChildren.length-1
-          idir = -1;
-        }
-        while (getNodeById(this.state.tree, null, windowData[nextId].tabChildren[i]) == null){
-          i += idir;
-        }
-        nextId = windowData[nextId].tabChildren[i];
-      }
       this.focusWindow(nextId);
     }
   }
@@ -476,16 +481,19 @@ export class TreeLayoutWindowManager extends Component {
 
     if (dist_key.length > 0){
       let nextId = dist_key[0].key;
-      //if (windowData[nextId].internal && windowData[nextId].tabChildren.length > 0){
-      //  console.log(windowData[nextId].tabChildren);
-      //  if (dir == 'right'){
-      //    nextId = windowData[nextId].tabChildren[windowData[nextId].tabChildren.length-1];
-      //  } else {
-      //    nextId = windowData[nextId].tabChildren[0];
-      //  }
-      //  console.log('h', nextId, windowData[nextId])
-      //  return nextId;
-      //}
+
+      if (windowData[nextId].internal && windowData[nextId].tabChildren.length > 0){
+        let i = 0
+        let idir = 1;
+        if (dir == 'left'){
+          i = windowData[nextId].tabChildren.length-1
+          idir = -1;
+        }
+        while (getNodeById(this.state.tree, null, windowData[nextId].tabChildren[i]) == null){
+          i += idir;
+        }
+        nextId = windowData[nextId].tabChildren[i];
+      }
       return [ nextId, windowData ];
     } else {
       return [ null, null ];
