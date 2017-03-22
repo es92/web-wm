@@ -200,8 +200,8 @@ function tabifyPositions(node, activeNodeId, onSwitchTab, depth) {
   return [ windowData, children ];
 }
 
-const borderStyleActive = '2px solid #448';
-const borderStyleInactive = '2px solid #112'; 
+const borderStyleActive = '4px solid #55b';
+const borderStyleInactive = '4px solid #112'; 
 function emptyRect () { 
   return { x: 0, y: 0, w: 0, h: 0 };
 }
