@@ -127,8 +127,10 @@ class App extends Component {
       this.wm.makeNewWindow(this.makeTestWindow());
       this.wm.makeNewWindow(this.makeTestWindow());
       //this.wm.changeSizeByPixels(this.wm.state.activeNodeId, 10, 10, 10, 10);
+      this.wm.closeKey('_root');
       setTimeout(() => {
-        this.wm.moveActiveRight()
+        this.wm.makeNewWindow(this.makeTestWindow());
+        //this.wm.moveActiveRight()
       }, 2000);
     }, 500);
   }

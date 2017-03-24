@@ -145,7 +145,11 @@ export class TreeLayoutWindowManager extends Component {
       this.closeActive();
     } else {
       this._closeId(key);
-      this.setState({ tree: this.state.tree });
+      if (key === '_root'){
+        this.setState({ tree: this.state.tree, activeNodeId: '_root' });
+      } else {
+        this.setState({ tree: this.state.tree });
+      }
     }
   }
   closeActive() {
@@ -170,6 +174,7 @@ export class TreeLayoutWindowManager extends Component {
     let parentId;
     if (node.kind === 'root'){
       parentId = node.id;
+      this._closeId(node.child.id);
     } else if (parent.kind === 'root'){
       parent.child = null;
       parentId = parent.id;
