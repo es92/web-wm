@@ -135,7 +135,15 @@ class App extends Component {
     }, 500);
   }
   render() {
-    return (<TreeLayoutWindowManager ref={ (r) => this.wm = r } maybeGetWindow={this.maybeGetWindow}/>);
+
+    let config = {
+      activeColor: '#55b',
+      inactiveColor: '#112',
+      windowBarHeight: '4px',
+      tabHeightPx: 10
+    }
+
+    return (<TreeLayoutWindowManager ref={ (r) => this.wm = r } maybeGetWindow={this.maybeGetWindow} config={config}/>);
   }
 }
 

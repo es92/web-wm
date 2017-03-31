@@ -75,8 +75,8 @@ function horizontalShrinkWindowPositions(windowData, [ start, end ], n, depth) {
   return shrunkWindowData;
 }
 
-function shrinkWindowPositions(node, shrinker, activeNodeId, onSwitchTab, depth) {
-  let childData = node.children.map(child => treeToData(child, activeNodeId, onSwitchTab, depth+1));
+function shrinkWindowPositions(config, node, shrinker, activeNodeId, onSwitchTab, depth) {
+  let childData = node.children.map(child => treeToData(config, child, activeNodeId, onSwitchTab, depth+1));
   let children = childData.map(([ childData, children ]) => children);
   children = [].concat.apply([], children);
 
@@ -111,8 +111,8 @@ function lastActiveDescendant(node){
   }
 }
 
-function tabifyPositions(node, activeNodeId, onSwitchTab, depth) {
-  let childData = node.children.map(child => treeToData(child, activeNodeId, onSwitchTab, depth+1));
+function tabifyPositions(config, node, activeNodeId, onSwitchTab, depth) {
+  let childData = node.children.map(child => treeToData(config, child, activeNodeId, onSwitchTab, depth+1));
   let children = childData.map(([ childData, children ]) => children);
   children = [].concat.apply([], children);
 
@@ -126,7 +126,7 @@ function tabifyPositions(node, activeNodeId, onSwitchTab, depth) {
 
   if (children.length > 1){
 
-    let tabHeight = 10;
+    let tabHeight = config.tabHeightPx;
 
     subWindowData.forEach(subWindowData => {
       iterKeys(subWindowData).forEach(key => {
@@ -175,9 +175,9 @@ function tabifyPositions(node, activeNodeId, onSwitchTab, depth) {
       let r = Math.random();
       windowData[r] = tabSwitcher;
       if (i === mostRecentChild) {
-        children.push(<div key={r} style={{ height: tabHeight, backgroundColor: '#448', color: 'white' }}>{'\u00A0'}</div>);
+        children.push(<div key={r} style={{ height: tabHeight, backgroundColor: config.activeColor, color: 'white' }}>{'\u00A0'}</div>);
       } else {
-        children.push(<div key={r} onClick={switchTab} style={{ height: tabHeight, backgroundColor: '#112', color: 'white' }}>{'\u00A0'}</div>);
+        children.push(<div key={r} onClick={switchTab} style={{ height: tabHeight, backgroundColor: config.inactiveColor, color: 'white' }}>{'\u00A0'}</div>);
       }
     });
 
@@ -200,23 +200,21 @@ function tabifyPositions(node, activeNodeId, onSwitchTab, depth) {
   return [ windowData, children ];
 }
 
-const borderStyleActive = '4px solid #55b';
-const borderStyleInactive = '4px solid #112'; 
 function emptyRect () { 
   return { x: 0, y: 0, w: 0, h: 0 };
 }
 
-export function treeToData(node, activeNodeId, onSwitchTab, depth) {
+export function treeToData(config, node, activeNodeId, onSwitchTab, depth) {
   if (node.kind === 'window'){
     var windowData = {}
     windowData[node.child.key] = {};
     windowData[node.child.key].border = {}
     let borderStyle;
     if (activeNodeId === node.id){
-      borderStyle = borderStyleActive;
+      borderStyle = config.windowBarHeight + ' solid ' + config.activeColor;
     }
     else {
-      borderStyle = borderStyleInactive;
+      borderStyle = config.windowBarHeight + ' solid ' + config.inactiveColor;
     }
     windowData[node.child.key].border.top = borderStyle;
     windowData[node.child.key].border.bottom = '';//borderStyle;
@@ -235,20 +233,20 @@ export function treeToData(node, activeNodeId, onSwitchTab, depth) {
     }
     return [ windowData, [ node.child ] ];
   } else if (node.kind === 'root'){
-    return treeToData(node.child, activeNodeId, onSwitchTab, depth+1);
+    return treeToData(config, node.child, activeNodeId, onSwitchTab, depth+1);
   } else if (node.kind === 'horizontal'){
-    return shrinkWindowPositions(node, horizontalShrinkWindowPositions, activeNodeId, onSwitchTab, depth+1);
+    return shrinkWindowPositions(config, node, horizontalShrinkWindowPositions, activeNodeId, onSwitchTab, depth+1);
   } else if (node.kind === 'vertical'){
-    return shrinkWindowPositions(node, verticalShrinkWindowPositions, activeNodeId, onSwitchTab, depth+1);
+    return shrinkWindowPositions(config, node, verticalShrinkWindowPositions, activeNodeId, onSwitchTab, depth+1);
   } else {
-    return tabifyPositions(node, activeNodeId, onSwitchTab, depth+1);
+    return tabifyPositions(config, node, activeNodeId, onSwitchTab, depth+1);
   }
 }
 
-export default function TreeLayoutManager({ elemRef, activeNodeId, tree, onSwitchTab }: TreeLayoutProps) {
+export default function TreeLayoutManager({ config, elemRef, activeNodeId, tree, onSwitchTab }: TreeLayoutProps) {
   let windowData, children;
   if (tree.child != null){
-    [ windowData, children ] = treeToData(tree, activeNodeId, onSwitchTab, 0);
+    [ windowData, children ] = treeToData(config, tree, activeNodeId, onSwitchTab, 0);
   }
   else {
     [ windowData, children ] = [ {}, [] ];

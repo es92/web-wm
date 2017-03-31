@@ -279,7 +279,7 @@ export class TreeLayoutWindowManager extends Component {
 
     if ((parent.kind === 'horizontal' || parent.kind === 'vertical') && parent.sizes.length > 1){
 
-      let [ windowData, children ] = treeToData(this.state.tree, node_id, null, 0);
+      let [ windowData, children ] = treeToData(this.props.config, this.state.tree, node_id, null, 0);
       let wmHeight = this._dom_node.clientHeight;
       let wmWidth = this._dom_node.clientWidth;
 
@@ -403,7 +403,7 @@ export class TreeLayoutWindowManager extends Component {
     }
   }
   getInDirection(dir){
-    let [ windowData, children ] = treeToData(this.state.tree, this.state.activeNodeId, null, 0);
+    let [ windowData, children ] = treeToData(this.props.config, this.state.tree, this.state.activeNodeId, null, 0);
     let wmHeight = this._dom_node.clientHeight;
     let wmWidth = this._dom_node.clientWidth;
     let [ node, parent ] = getNodeById(this.state.tree, null, this.state.activeNodeId);
@@ -506,7 +506,7 @@ export class TreeLayoutWindowManager extends Component {
   }
   render() {
     return (
-      <TreeLayoutManager elemRef={ (r) => { if (r != null){ this._dom_node = r; } } } tree={this.state.tree} activeNodeId={this.state.activeNodeId} onSwitchTab={this.switchTabs.bind(this)}>
+      <TreeLayoutManager elemRef={ (r) => { if (r != null){ this._dom_node = r; } } } tree={this.state.tree} activeNodeId={this.state.activeNodeId} onSwitchTab={this.switchTabs.bind(this)} config={this.props.config}>
         { this.state.windows }
       </TreeLayoutManager>
     );
