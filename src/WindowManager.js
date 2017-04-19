@@ -404,6 +404,72 @@ export class TreeLayoutWindowManager extends Component {
     let [ nextId, _ ] = this.getInDirection(dir);
     if (nextId != null){
       this.swapNodes(this.state.activeNodeId, nextId);
+    } else {
+      let [ node, parent ] = getNodeById(this.state.tree, null, this.state.activeNodeId);
+      if (parent.kind === 'horizontal' || parent.kind === 'vertical' || parent.kind === 'tab'){
+        let idx = parent.children.indexOf(node)
+        if (idx === 0 || idx === parent.children.length - 1){
+          let [ _, grandparent ] = getNodeById(this.state.tree, null, parent.id);
+          let node = parent.children[idx];
+          if (grandparent.kind === 'root'){
+            let children = parent.children;
+            let sizes = parent.sizes;
+
+            children.splice(idx, 1);
+
+            let size = sizes.splice(idx, 1);
+            sizes = sizes.map((s) => { return s + size / sizes.length; });
+
+            const newNode = {
+              kind: parent.kind,
+              lastActiveTime: -1,
+              sizes: sizes,
+              id: genUUID(),
+              children: children,
+            }
+
+            let parent_children;
+            if (idx === 0){
+              parent_children = [node, newNode];
+            } else {
+              parent_children = [newNode, node];
+            }
+
+            let new_kind = parent.kind;
+            if (new_kind === 'tab'){
+              new_kind = 'horizontal';
+            }
+            const newNode2 = {
+              kind: new_kind,
+              lastActiveTime: -1,
+              sizes: [ .5, .5 ],
+              id: genUUID(),
+              children: parent_children,
+            }
+
+            grandparent.child = newNode2;
+
+          } else if (grandparent.kind === 'horizontal' || grandparent.kind === 'vertical' || grandparent.kind === 'tab'){
+            parent.children.splice(idx, 1);
+            parent.sizes.splice(idx, 1);
+
+            grandparent.sizes = grandparent.sizes.map((s) => { return s*(grandparent.children.length)/(grandparent.children.length+1) });
+
+            if (idx == 0){
+              grandparent.children.unshift(node);
+              grandparent.sizes.unshift(1./grandparent.children.length);
+            } else {
+              grandparent.children.push(node);
+              grandparent.sizes.push(1./grandparent.children.length);
+            }
+
+          } else {
+            throw Error('nyi ' + grandparent.kind);
+          }
+          this.simplify(null, this.state.tree);
+          this.setState({ tree: this.state.tree });
+        }
+      }
     }
   }
   swapNodes(id1, id2){

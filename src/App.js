@@ -125,9 +125,11 @@ class App extends Component {
     setTimeout(() => {
       this.wm.makeNewWindow(this.makeTestWindow());
       this.wm.makeNewWindow(this.makeTestWindow());
-      this.wm.makeHorizontalSplit()
       this.wm.makeNewWindow(this.makeTestWindow());
-      this.wm.focusParentGroup();
+      this.wm.moveActiveLeft()
+      this.wm.moveActiveFocusRight()
+      this.wm.moveActiveFocusRight()
+      this.wm.moveActiveRight()
       //this.wm.makeNewWindow(this.makeTestWindow());
       //this.wm.changeSizeByPixels(this.wm.state.activeNodeId, 10, 10, 10, 10);
       //this.wm.closeKey('_root');
