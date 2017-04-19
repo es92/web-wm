@@ -15,7 +15,10 @@ type TreeLayoutWindowManagerState = {
 
 function genUUID() {
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-    let r = Math.random()*16|0, v = c === 'x' ? r : (r&0x3|0x8);
+    let r = Math.random()*16|0;
+    let v1 = r&0x3;
+    let v2 = 0x8;
+    let v = c === 'x' ? r : (v1|v2);
     return v.toString(16);
   });
 }
@@ -59,7 +62,7 @@ function getNodeSize(node, windowData, wmWidth, wmHeight){
     let h = wmHeight*d.position.h + d.pposition.h;
 
     return [ x, y, w, h ];
-  } else if (node.kind === 'horizontal' || node.kind === 'vertical' || node.kind == 'tab'){
+  } else if (node.kind === 'horizontal' || node.kind === 'vertical' || node.kind === 'tab'){
     let child_sizes = node.children.map((c) => getNodeSize(c, windowData, wmWidth, wmHeight));
     let child_boxes = child_sizes.map(([x, y, w, h]) => [ x, y, x+w, y+h ]);
     let [ x, y, w, h ] = child_boxes.reduce(([l1, t1, r1, b1], [l2, t2, r2, b2]) => [ Math.min(l1, l2), Math.min(t1, t2), Math.max(r1, r2), Math.max(b1, b2) ]);
@@ -76,6 +79,7 @@ export class TreeLayoutWindowManager extends Component {
   state: TreeLayoutWindowManagerState = {
               lastActiveTime: 0,  
               activeNodeId: '_root',
+              activeGroupId: null,
               tree: { kind: 'root',
                       lastActiveTime: -1,
                       id: '_root',
@@ -84,16 +88,49 @@ export class TreeLayoutWindowManager extends Component {
   componentDidUpdate(prevProps, prevState){
     if (this.state.activeNodeId !== prevState.activeNodeId){
 
-      let [ node, parent ] = getNodeById(this.state.tree, null, this.state.activeNodeId);
+      let [ node, _ ] = getNodeById(this.state.tree, null, this.state.activeNodeId);
       if (node.kind === 'window'){
         node.child.props['data-onRequestFocus']();
       }
     }
   }
+  simplify(parent, node){
+    if (node.kind === 'root'){
+      this.simplify(node, node.child);
+    } else if (node.kind === 'horizontal' || node.kind === 'vertical' || node.kind === 'tab'){
+      if (node.children.length === 1){
+        if (parent.kind === 'root'){
+          parent.child = node.children[0];
+        } else if (node.kind === 'horizontal' || node.kind === 'vertical' || node.kind === 'tab'){
+          let idx = parent.children.indexOf(node);
+          parent.children[idx] = node.children[0];
+        } else {
+          throw new Error('nyi ' + node.kind);
+        }
+      } else {
+        node.children.forEach((c) => this.simplify(node, c));
+      }
+    } else if (node.kind === 'window'){
+      return;
+    } else {
+      throw new Error('nyi ' + node.kind);
+    }
+  }
+  focusParentGroup(){
+    let currentGroupId = this.state.activeGroupId;
+    if (currentGroupId == null){
+      currentGroupId = this.state.activeNodeId
+    }
+    let [ _, parent ] = getNodeById(this.state.tree, null, currentGroupId);
+    if (parent !== null && parent.kind !== '_root'){
+      this.setState({ activeGroupId: parent.id });
+    }
+  }
   focusWindow(key) {
-    let [ node, parent ] = getNodeById(this.state.tree, null, key);
+    let [ node, _ ] = getNodeById(this.state.tree, null, key);
     node.lastActiveTime = this.state.lastActiveTime+1;
-    this.setState({ activeNodeId: key, tree: this.state.tree, lastActiveTime: this.state.lastActiveTime+1 });
+    this.simplify(null, this.state.tree);
+    this.setState({ activeNodeId: key, activeGroupId: null, tree: this.state.tree, lastActiveTime: this.state.lastActiveTime+1 });
   }
   makeNewWindow(win) {
     let [ node, parent ] = getNodeById(this.state.tree, null, this.state.activeNodeId);
@@ -138,7 +175,7 @@ export class TreeLayoutWindowManager extends Component {
       container.sizes.push(1./container.children.length);
     }
 
-    this.setState({ tree: this.state.tree, lastActiveTime: this.state.lastActiveTime+1, activeNodeId: activeNodeId });
+    this.setState({ tree: this.state.tree, lastActiveTime: this.state.lastActiveTime+1, activeNodeId: activeNodeId, activeGroupId: null });
   }
   closeKey(key) {
     if (key === this.state.activeNodeId){
@@ -146,7 +183,7 @@ export class TreeLayoutWindowManager extends Component {
     } else {
       this._closeId(key);
       if (key === '_root'){
-        this.setState({ tree: this.state.tree, activeNodeId: '_root' });
+        this.setState({ tree: this.state.tree, activeNodeId: '_root', activeGroupId: null, });
       } else {
         this.setState({ tree: this.state.tree });
       }
@@ -155,7 +192,7 @@ export class TreeLayoutWindowManager extends Component {
   closeActive() {
     let parentId = this._closeId(this.state.activeNodeId);
 
-    let [ node, parent ] = getNodeById(this.state.tree, null, parentId);
+    let [ node, _ ] = getNodeById(this.state.tree, null, parentId);
     let activeId;
     if (node.kind === 'vertical' || node.kind === 'horizontal' || node.kind === 'tab') {
       activeId = node.children[0].id;
@@ -166,7 +203,7 @@ export class TreeLayoutWindowManager extends Component {
       throw new Error('nyi');
     }
 
-    this.setState({ tree: this.state.tree, activeNodeId: activeId});
+    this.setState({ tree: this.state.tree, activeNodeId: activeId, activeGroupId: null});
   }
   _closeId(id) {
     let [ node, parent ] = getNodeById(this.state.tree, null, id);
@@ -214,7 +251,7 @@ export class TreeLayoutWindowManager extends Component {
         children: [ node ],
       }
       parent.children[idx] = newNode;
-      this.setState({ tree: this.state.tree });
+      this.setState({ tree: this.state.tree, activeGroupId: newNode.id });
     }
     else if (parent.kind === 'root') {
       throw Error('nyi');
@@ -268,28 +305,28 @@ export class TreeLayoutWindowManager extends Component {
     this.setState({ tree: this.state.tree });
   }
   switchTabs(key, idx) {
-    let [ node, parent ] = getNodeById(this.state.tree, null, key);
+    let [ node, _ ] = getNodeById(this.state.tree, null, key);
     let child = node.children[idx]
     let childId = child.id;
     child.lastActiveTime = this.state.lastActiveTime + 1;
-    this.setState({ activeNodeId: childId, tree: this.state.tree, lastActiveTime: this.state.lastActiveTime + 1 });
+    this.setState({ activeNodeId: childId, activeGroupId: null, tree: this.state.tree, lastActiveTime: this.state.lastActiveTime + 1 });
   }
   changeSizeByPixels(node_id, dx, dy, x, y){
     let [ node, parent ] = getNodeById(this.state.tree, null, node_id);
 
     if ((parent.kind === 'horizontal' || parent.kind === 'vertical') && parent.sizes.length > 1){
 
-      let [ windowData, children ] = treeToData(this.props.config, this.state.tree, node_id, null, 0);
+      let [ windowData, _ ] = treeToData(this.props.config, this.state.tree, node_id, null, 0);
       let wmHeight = this._dom_node.clientHeight;
       let wmWidth = this._dom_node.clientWidth;
 
-      let [ pax, pay, paw, pah ] = getNodeSize(parent, windowData, wmWidth, wmHeight);
+      let [ _0, _1, paw, pah ] = getNodeSize(parent, windowData, wmWidth, wmHeight);
 
       let idx = parent.children.indexOf(node);
       let change_side;
-      if (idx == 0){
+      if (idx === 0){
         change_side = 1;
-      } else if (idx == parent.children.length-1){
+      } else if (idx === parent.children.length-1){
         change_side = -1;
       } else {
         let [ ax, ay, aw, ah ] = getNodeSize(node, windowData, wmWidth, wmHeight);
@@ -335,11 +372,11 @@ export class TreeLayoutWindowManager extends Component {
       }
       parent.sizes[idx] += delta;
       let size_idxs = parent.sizes.map((s, i) => [ s, i ])
-                                  .filter((s,i) => i != idx);
+                                  .filter((s,i) => i !== idx);
       size_idxs = size_idxs.sort();
       let deltas = Array(size_idxs.length).fill(delta / (parent.sizes.length-1));
       size_idxs.forEach(([s, i], j) => {
-        parent.sizes[i] = parent.sizes[i] - deltas[j];
+        parent.sizes[i] -= deltas[j];
         if (parent.sizes[i] < min_size){
           let extra = min_size - parent.sizes[i];
           for (let k = j+1; k < deltas.length; k++){
@@ -364,7 +401,7 @@ export class TreeLayoutWindowManager extends Component {
     this.moveActiveInDirection('up');
   }
   moveActiveInDirection(dir){ 
-    let [ nextId, windowData ] = this.getInDirection(dir);
+    let [ nextId, _ ] = this.getInDirection(dir);
     if (nextId != null){
       this.swapNodes(this.state.activeNodeId, nextId);
     }
@@ -397,7 +434,7 @@ export class TreeLayoutWindowManager extends Component {
     this.moveActiveFocusInDirection('up');
   }
   moveActiveFocusInDirection(dir){ 
-    let [ nextId, windowData ] = this.getInDirection(dir);
+    let [ nextId, _ ] = this.getInDirection(dir);
     if (nextId != null){
       this.focusWindow(nextId);
     }
@@ -406,7 +443,7 @@ export class TreeLayoutWindowManager extends Component {
     let [ windowData, children ] = treeToData(this.props.config, this.state.tree, this.state.activeNodeId, null, 0);
     let wmHeight = this._dom_node.clientHeight;
     let wmWidth = this._dom_node.clientWidth;
-    let [ node, parent ] = getNodeById(this.state.tree, null, this.state.activeNodeId);
+    let [ node, _ ] = getNodeById(this.state.tree, null, this.state.activeNodeId);
 
     let [ ax, ay, aw, ah ] = getNodeSize(node, windowData, wmWidth, wmHeight);
     let acx = ax + aw/2;
@@ -422,8 +459,6 @@ export class TreeLayoutWindowManager extends Component {
                            .filter((child) => child.key !== this.state.activeNodeId)
                            .map((child) => {
                              let [ x, y, w, h ] = getNodeSize({ kind: 'window', id: child.key }, windowData, wmWidth, wmHeight);
-                             const tabPosition = windowData[child.key].tabPosition;
-                             const activeTab = windowData[child.key].activeTab;
                              let tabData;
                              if (windowData[child.key].isTab){
                                const tabPosition = windowData[child.key].tabPosition;
@@ -490,7 +525,7 @@ export class TreeLayoutWindowManager extends Component {
       if (windowData[nextId].internal && windowData[nextId].tabChildren.length > 0){
         let i = 0
         let idir = 1;
-        if (dir == 'left'){
+        if (dir === 'left'){
           i = windowData[nextId].tabChildren.length-1
           idir = -1;
         }
@@ -506,7 +541,7 @@ export class TreeLayoutWindowManager extends Component {
   }
   render() {
     return (
-      <TreeLayoutManager elemRef={ (r) => { if (r != null){ this._dom_node = r; } } } tree={this.state.tree} activeNodeId={this.state.activeNodeId} onSwitchTab={this.switchTabs.bind(this)} config={this.props.config}>
+      <TreeLayoutManager elemRef={ (r) => { if (r != null){ this._dom_node = r; } } } tree={this.state.tree} activeNodeId={this.state.activeNodeId} activeGroupId={this.state.activeGroupId} onSwitchTab={this.switchTabs.bind(this)} config={this.props.config}>
         { this.state.windows }
       </TreeLayoutManager>
     );

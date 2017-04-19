@@ -29,10 +29,11 @@ type WindowCompositorProps = {
 
 function getStyling(child, data){
   let style = {
-        left: 100*data[child.key].position.x + '%', 
-        width: 100*data[child.key].position.w + '%', 
-        top: 'calc(' + 100*data[child.key].position.y + '%' + ' + ' + data[child.key].pposition.y + 'px)',
-        height: 'calc(' + 100*data[child.key].position.h + '%' + ' + ' + data[child.key].pposition.h + 'px)',
+        left: 'calc(' + 100*data[child.key].position.x + '% + ' + data[child.key].pposition.x + 'px)',
+        width: 'calc(' + 100*data[child.key].position.w + '% + ' + data[child.key].pposition.w + 'px)',
+
+        top: 'calc(' + 100*data[child.key].position.y + '% + ' + data[child.key].pposition.y + 'px)',
+        height: 'calc(' + 100*data[child.key].position.h + '% + ' + data[child.key].pposition.h + 'px)',
         position: 'absolute',
         boxSizing: 'border-box',
         borderLeft: data[child.key].border.left,
@@ -47,8 +48,10 @@ function getStyling(child, data){
   return style;
 }
 
-export default function WindowCompositor({ elemRef, data, children }: WindowCompositorProps) {
+export default function WindowCompositor({ elemRef, data, children, groupHighlightColor }: WindowCompositorProps) {
+  let highlightColor = children.length === 0 ? 'white' : groupHighlightColor;
   return (<div ref={elemRef} style={{
+                      background: highlightColor,
                       position: 'absolute',
                       left: 0,
                       right: 0,

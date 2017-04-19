@@ -5,7 +5,7 @@ declare var VimJS: any;
 import React, { Component } from 'react';
 import './App.css';
 
-import { PercentLayoutWindowManager, TreeLayoutWindowManager } from './WindowManager.js'
+import { TreeLayoutWindowManager } from './WindowManager.js'
 
 //import Vim from 'react-es-vim.js/ReactVim.js';
 
@@ -75,7 +75,7 @@ class App extends Component {
       e.preventDefault();
       e.stopPropagation();
 
-      if (e.ctrlKey){ 
+      if (e.ctrlKey){
         if (e.key === 'n'){
           this.wm.changeActiveSize(-.1);
         } else if (e.key === 'i'){
@@ -98,8 +98,8 @@ class App extends Component {
       } else if (e.key === 'c'){
         this.wm.closeActive()
 
-      } else if (e.key === 'a'){
-        // move active to parent
+      } else if (e.key === 'q'){
+        this.wm.focusParentGroup();
       } else if (e.key === 'n'){
         this.wm.moveActiveFocusLeft()
       } else if (e.key === 'i'){
@@ -125,13 +125,16 @@ class App extends Component {
     setTimeout(() => {
       this.wm.makeNewWindow(this.makeTestWindow());
       this.wm.makeNewWindow(this.makeTestWindow());
+      this.wm.makeHorizontalSplit()
       this.wm.makeNewWindow(this.makeTestWindow());
+      this.wm.focusParentGroup();
+      //this.wm.makeNewWindow(this.makeTestWindow());
       //this.wm.changeSizeByPixels(this.wm.state.activeNodeId, 10, 10, 10, 10);
-      this.wm.closeKey('_root');
-      setTimeout(() => {
-        this.wm.makeNewWindow(this.makeTestWindow());
-        //this.wm.moveActiveRight()
-      }, 2000);
+      //this.wm.closeKey('_root');
+      //setTimeout(() => {
+      //  this.wm.makeNewWindow(this.makeTestWindow());
+      //  //this.wm.moveActiveRight()
+      //}, 2000);
     }, 500);
   }
   render() {
@@ -139,8 +142,9 @@ class App extends Component {
     let config = {
       activeColor: '#55b',
       inactiveColor: '#112',
+      groupHighlightColor: '#55b',
       windowBarHeight: '4px',
-      tabHeightPx: 10
+      tabHeightPx: 10,
     }
 
     return (<TreeLayoutWindowManager ref={ (r) => this.wm = r } maybeGetWindow={this.maybeGetWindow} config={config}/>);

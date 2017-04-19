@@ -75,8 +75,8 @@ function horizontalShrinkWindowPositions(windowData, [ start, end ], n, depth) {
   return shrunkWindowData;
 }
 
-function shrinkWindowPositions(config, node, shrinker, activeNodeId, onSwitchTab, depth) {
-  let childData = node.children.map(child => treeToData(config, child, activeNodeId, onSwitchTab, depth+1));
+function shrinkWindowPositions(config, node, shrinker, activeNodeId, activeGroupId, onSwitchTab, depth) {
+  let childData = node.children.map(child => treeToData(config, child, activeNodeId, activeGroupId, onSwitchTab, depth+1));
   let children = childData.map(([ childData, children ]) => children);
   children = [].concat.apply([], children);
 
@@ -102,7 +102,7 @@ function shrinkWindowPositions(config, node, shrinker, activeNodeId, onSwitchTab
 function lastActiveDescendant(node){
   if (node.kind === 'window'){
     return node.lastActiveTime;
-  } else if (node.kind == 'root'){
+  } else if (node.kind === 'root'){
     return node.lastActiveTime;
   } else if (node.kind === 'vertical' || node.kind === 'horizontal' || node.kind === 'tab') {
     let times = node.children.map(lastActiveDescendant);
@@ -111,8 +111,8 @@ function lastActiveDescendant(node){
   }
 }
 
-function tabifyPositions(config, node, activeNodeId, onSwitchTab, depth) {
-  let childData = node.children.map(child => treeToData(config, child, activeNodeId, onSwitchTab, depth+1));
+function tabifyPositions(config, node, activeNodeId, activeGroupId, onSwitchTab, depth) {
+  let childData = node.children.map(child => treeToData(config, child, activeNodeId, activeGroupId, onSwitchTab, depth+1));
   let children = childData.map(([ childData, children ]) => children);
   children = [].concat.apply([], children);
 
@@ -204,9 +204,10 @@ function emptyRect () {
   return { x: 0, y: 0, w: 0, h: 0 };
 }
 
-export function treeToData(config, node, activeNodeId, onSwitchTab, depth) {
+export function treeToData(config, node, activeNodeId, activeGroupId, onSwitchTab, depth) {
+
+  let [ windowData, children ] = [ {}, [] ];
   if (node.kind === 'window'){
-    var windowData = {}
     windowData[node.child.key] = {};
     windowData[node.child.key].border = {}
     let borderStyle;
@@ -231,28 +232,52 @@ export function treeToData(config, node, activeNodeId, onSwitchTab, depth) {
       w: 1.0,
       h: 1.0,
     }
-    return [ windowData, [ node.child ] ];
+    children = [ node.child ];
   } else if (node.kind === 'root'){
-    return treeToData(config, node.child, activeNodeId, onSwitchTab, depth+1);
+    [ windowData, children ] = treeToData(config, node.child, activeNodeId, activeGroupId, onSwitchTab, depth+1);
   } else if (node.kind === 'horizontal'){
-    return shrinkWindowPositions(config, node, horizontalShrinkWindowPositions, activeNodeId, onSwitchTab, depth+1);
+    [ windowData, children ] = shrinkWindowPositions(config, node, horizontalShrinkWindowPositions, activeNodeId, activeGroupId, onSwitchTab, depth+1);
   } else if (node.kind === 'vertical'){
-    return shrinkWindowPositions(config, node, verticalShrinkWindowPositions, activeNodeId, onSwitchTab, depth+1);
+    [ windowData, children ] = shrinkWindowPositions(config, node, verticalShrinkWindowPositions, activeNodeId, activeGroupId, onSwitchTab, depth+1);
   } else {
-    return tabifyPositions(config, node, activeNodeId, onSwitchTab, depth+1);
+    [ windowData, children ] = tabifyPositions(config, node, activeNodeId, activeGroupId, onSwitchTab, depth+1);
   }
+
+
+  if (node.id === activeGroupId){
+    let W = 4;
+    Object.keys(windowData).forEach((child) => {
+      let win = windowData[child]
+      if (win.position.x === 0){
+        win.pposition.x += W;
+        win.pposition.w -= W;
+      }
+      if (win.position.y === 0){
+        win.pposition.y += W;
+        win.pposition.h -= W;
+      }
+      if (win.position.x + win.position.w === 1){
+        win.pposition.w -= W;
+      }
+      if (win.position.y + win.position.h === 1){
+        win.pposition.h -= W;
+      }
+    });
+  }
+
+  return [ windowData, children ];
 }
 
-export default function TreeLayoutManager({ config, elemRef, activeNodeId, tree, onSwitchTab }: TreeLayoutProps) {
+export default function TreeLayoutManager({ config, elemRef, activeNodeId, activeGroupId, tree, onSwitchTab }: TreeLayoutProps) {
   let windowData, children;
   if (tree.child != null){
-    [ windowData, children ] = treeToData(config, tree, activeNodeId, onSwitchTab, 0);
+    [ windowData, children ] = treeToData(config, tree, activeNodeId, activeGroupId, onSwitchTab, 0);
   }
   else {
     [ windowData, children ] = [ {}, [] ];
   }
 
-  return (<WindowCompositor elemRef={elemRef} data={windowData}>
+  return (<WindowCompositor elemRef={elemRef} data={windowData} groupHighlightColor={config.groupHighlightColor}>
             {children}
           </WindowCompositor>)
 }
