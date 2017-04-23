@@ -400,76 +400,132 @@ export class TreeLayoutWindowManager extends Component {
   moveActiveUp(){
     this.moveActiveInDirection('up');
   }
-  moveActiveInDirection(dir){ 
-    let [ nextId, _ ] = this.getInDirection(dir);
-    if (nextId != null){
-      this.swapNodes(this.state.activeNodeId, nextId);
-    } else {
-      let [ node, parent ] = getNodeById(this.state.tree, null, this.state.activeNodeId);
-      if (parent.kind === 'horizontal' || parent.kind === 'vertical' || parent.kind === 'tab'){
-        let idx = parent.children.indexOf(node)
-        if (idx === 0 || idx === parent.children.length - 1){
-          let [ _, grandparent ] = getNodeById(this.state.tree, null, parent.id);
-          let node = parent.children[idx];
-          if (grandparent.kind === 'root'){
-            let children = parent.children;
-            let sizes = parent.sizes;
+  moveActiveInDirection(dir){
+    let [ node, parent ] = getNodeById(this.state.tree, null, this.state.activeNodeId);
 
-            children.splice(idx, 1);
+    let dirHor = dir === 'right' || dir === 'left';
 
-            let size = sizes.splice(idx, 1);
-            sizes = sizes.map((s) => { return s + size / sizes.length; });
+    if (parent.children != null){
+      let parentHor = parent.kind === 'horizontal' || parent.kind === 'tab';
 
-            const newNode = {
-              kind: parent.kind,
-              lastActiveTime: -1,
-              sizes: sizes,
-              id: genUUID(),
-              children: children,
-            }
+      let idx = parent.children.indexOf(node);
+      let len = parent.children.length;
 
-            let parent_children;
-            if (idx === 0){
-              parent_children = [node, newNode];
-            } else {
-              parent_children = [newNode, node];
-            }
+      let neighbor;
 
-            let new_kind = parent.kind;
-            if (new_kind === 'tab'){
-              new_kind = 'horizontal';
-            }
-            const newNode2 = {
-              kind: new_kind,
-              lastActiveTime: -1,
-              sizes: [ .5, .5 ],
-              id: genUUID(),
-              children: parent_children,
-            }
-
-            grandparent.child = newNode2;
-
-          } else if (grandparent.kind === 'horizontal' || grandparent.kind === 'vertical' || grandparent.kind === 'tab'){
-            parent.children.splice(idx, 1);
-            parent.sizes.splice(idx, 1);
-
-            grandparent.sizes = grandparent.sizes.map((s) => { return s*(grandparent.children.length)/(grandparent.children.length+1) });
-
-            if (idx == 0){
-              grandparent.children.unshift(node);
-              grandparent.sizes.unshift(1./grandparent.children.length);
-            } else {
-              grandparent.children.push(node);
-              grandparent.sizes.push(1./grandparent.children.length);
-            }
-
-          } else {
-            throw Error('nyi ' + grandparent.kind);
-          }
-          this.simplify(null, this.state.tree);
-          this.setState({ tree: this.state.tree });
+      if (dirHor && parentHor){
+        if (dir === 'left' && idx > 0){
+          neighbor = parent.children[idx-1];
+        } else if (dir === 'right' && idx < len-1){
+          neighbor = parent.children[idx+1];
+        }
+      } else if (!dirHor && !parentHor){
+        if (dir === 'up' && idx > 0){
+          neighbor = parent.children[idx-1];
+        } else if (dir === 'down' && idx < len-1){
+          neighbor = parent.children[idx+1];
         }
       }
+
+      if (neighbor != null){
+        if (neighbor.kind === 'window'){
+          this.swapNodes(this.state.activeNodeId, neighbor.id);
+          return;
+        } else {
+          let add_directly_to_neighbor = neighbor.kind === parent.kind || true;
+          if (add_directly_to_neighbor){
+            let idx = parent.children.indexOf(node);
+            parent.children.splice(idx, 1);
+            let rm_size = parent.sizes[idx];
+            parent.sizes.splice(idx, 1);
+            parent.sizes = parent.sizes.map((s) => s + rm_size/(parent.children.length));
+
+            let end = dir === 'left' || dir === 'up';
+            if (neighbor.kind !== parent.kind){
+              end = false;
+            }
+
+            if (end){
+              neighbor.children.push(node);
+            } else {
+              neighbor.children.unshift(node);
+            }
+            neighbor.sizes = neighbor.sizes.map((s) => { return s*(neighbor.children.length-1)/(neighbor.children.length) });
+            if (end){
+              neighbor.sizes.push(1./neighbor.children.length);
+            } else {
+              neighbor.sizes.unshift(1./neighbor.children.length);
+            }
+
+            this.simplify(null, this.state.tree);
+
+            this.setState({ tree: this.state.tree });
+            return;
+          } else {
+            throw new Error('should not be reached');
+          }
+        }
+      }
+    }
+
+    let [ _, grandparent ] = getNodeById(this.state.tree, null, parent.id);
+
+    if (grandparent.kind === 'root'){
+
+      let kind = dirHor ? 'horizontal' : 'vertical';
+
+      let end = dir === 'right' || dir === 'down';
+
+      let children = end ? [ grandparent.child, node ] : [ node, grandparent.child ]
+
+      const newNode = {
+        kind: kind,
+        lastActiveTime: -1,
+        sizes: [ .5, .5 ],
+        id: genUUID(),
+        children: children,
+      }
+
+      let idx = parent.children.indexOf(node);
+      parent.children.splice(idx, 1);
+
+      let rm_size = parent.sizes[idx];
+      parent.sizes.splice(idx, 1);
+      parent.sizes = parent.sizes.map((s) => s + rm_size/(parent.children.length));
+
+      grandparent.child = newNode;
+
+      this.simplify(null, this.state.tree);
+      this.setState({ tree: this.state.tree });
+
+    } else {
+      let neighbor = grandparent;
+
+      let idx = parent.children.indexOf(node);
+      parent.children.splice(idx, 1);
+      let rm_size = parent.sizes[idx];
+      parent.sizes.splice(idx, 1);
+      parent.sizes = parent.sizes.map((s) => s + rm_size/(parent.children.length));
+
+      let end = dir === 'right' || dir === 'down';
+
+      let parent_idx = grandparent.children.indexOf(parent);
+
+      let node_idx;
+      if (end){
+        node_idx = parent_idx+1;
+      } else {
+        node_idx = parent_idx;
+      }
+
+      neighbor.children.splice(node_idx, 0, node);
+      neighbor.sizes = neighbor.sizes.map((s) => { return s*(neighbor.children.length-1)/(neighbor.children.length) });
+      neighbor.sizes.splice(node_idx, 0, 1./neighbor.children.length);
+
+      this.simplify(null, this.state.tree);
+
+      this.setState({ tree: this.state.tree });
+      return;
     }
   }
   swapNodes(id1, id2){
@@ -482,10 +538,13 @@ export class TreeLayoutWindowManager extends Component {
       let idx2 = parent2.children.indexOf(node2);
       parent1.children[idx1] = node2;
       parent2.children[idx2] = node1;
+
+      node1.lastActiveTime = this.state.lastActiveTime + 2;
+      node2.lastActiveTime = this.state.lastActiveTime + 1;
     } else {
       throw new Error('nyi ' + parent1.kind + ' ' + parent2.kind);
     }
-    this.setState({ tree: this.state.tree });
+    this.setState({ tree: this.state.tree, lastActiveTime: this.state.lastActiveTime + 2 });
   }
   moveActiveFocusRight(){
     this.moveActiveFocusInDirection('right');
@@ -500,12 +559,86 @@ export class TreeLayoutWindowManager extends Component {
     this.moveActiveFocusInDirection('up');
   }
   moveActiveFocusInDirection(dir){ 
-    let [ nextId, _ ] = this.getInDirection(dir);
+    let nextId = this.getInDirection(this.state.activeNodeId, dir);
     if (nextId != null){
+      nextId = this.descendToWindowFromDir(nextId, dir);
       this.focusWindow(nextId);
     }
   }
-  getInDirection(dir){
+  getInDirection(nodeId, dir){
+    let [ node, parent ] = getNodeById(this.state.tree, null, nodeId);
+    if (parent.kind === 'horizontal' || parent.kind === 'tab'){
+
+      let idx = parent.children.indexOf(node);
+
+      if (dir === 'right'){
+        if (idx+1 < parent.children.length){
+          return parent.children[idx+1].id;
+        } else {
+          return this.getInDirection(parent.id, dir);
+        }
+      } else if (dir === 'left'){
+        if (idx-1 >= 0){
+          return parent.children[idx-1].id;
+        } else {
+          return this.getInDirection(parent.id, dir);
+        }
+      } else {
+        return this.getInDirection(parent.id, dir);
+      }
+    } else if (parent.kind === 'vertical'){
+
+      let idx = parent.children.indexOf(node);
+
+      if (dir === 'down'){
+        if (idx+1 < parent.children.length){
+          return parent.children[idx+1].id;
+        } else {
+          return this.getInDirection(parent.id, dir);
+        }
+      } else if (dir === 'up'){
+        if (idx-1 >= 0){
+          return parent.children[idx-1].id;
+        } else {
+          return this.getInDirection(parent.id, dir);
+        }
+      } else {
+        return this.getInDirection(parent.id, dir);
+      }
+
+    } else {
+      return null;
+    }
+  }
+  descendToWindowFromDir(nodeId, dir){
+    let [ node, _ ] = getNodeById(this.state.tree, null, nodeId);
+
+    if (node.kind === 'window'){
+      return node.id;
+    } else if (node.kind === 'horizontal' || node.kind === 'tab'){
+      if (dir === 'right'){
+        return this.descendToWindowFromDir(node.children[0].id, dir);
+      } else if (dir === 'left'){
+        return this.descendToWindowFromDir(node.children[node.children.length-1].id, dir);
+      } else {
+        let lastActives = node.children.map((c) => c.lastActiveTime);
+        let idx = lastActives.indexOf(Math.max.apply(Math, lastActives));
+        return this.descendToWindowFromDir(node.children[idx].id, dir);
+      }
+    } else if (node.kind === 'vertical'){
+      if (dir === 'down'){
+        return this.descendToWindowFromDir(node.children[0].id, dir);
+      } else if (dir === 'up'){
+        return this.descendToWindowFromDir(node.children[node.children.length-1].id, dir);
+      } else {
+        let lastActives = node.children.map((c) => c.lastActiveTime);
+        let idx = lastActives.indexOf(Math.max.apply(Math, lastActives));
+        return this.descendToWindowFromDir(node.children[idx].id, dir);
+      }
+    }
+    return nodeId;
+  }
+  _getInDirection(dir){
     let [ windowData, children ] = treeToData(this.props.config, this.state.tree, this.state.activeNodeId, null, 0);
     let wmHeight = this._dom_node.clientHeight;
     let wmWidth = this._dom_node.clientWidth;
