@@ -190,7 +190,11 @@ export class TreeLayoutWindowManager extends Component {
     }
   }
   closeActive() {
-    let parentId = this._closeId(this.state.activeNodeId);
+    let nodeId = this.state.activeGroupId;
+    if (nodeId == null){
+      nodeId = this.state.activeNodeId;
+    }
+    let parentId = this._closeId(nodeId);
 
     let [ node, _ ] = getNodeById(this.state.tree, null, parentId);
     let activeId;
@@ -258,7 +262,16 @@ export class TreeLayoutWindowManager extends Component {
     }
   }
   toggleCurrentOrientation() {
-    let [ node, parent ] = getNodeById(this.state.tree, null, this.state.activeNodeId);
+    let node, parent;
+    if (this.state.activeGroupId != null){
+      let agid = this.state.activeGroupId;
+      if (agid === '_root'){
+        agid = this.state.tree.child.id;
+      }      
+      [ node, parent ] = getNodeById(this.state.tree, null, agid);
+    } else {
+      [ node, parent ] = getNodeById(this.state.tree, null, this.state.activeNodeId);
+    }
 
     if (node.kind === 'root')
       return;
@@ -401,7 +414,11 @@ export class TreeLayoutWindowManager extends Component {
     this.moveActiveInDirection('up');
   }
   moveActiveInDirection(dir){
-    let [ node, parent ] = getNodeById(this.state.tree, null, this.state.activeNodeId);
+    let nodeId = this.state.activeGroupId;
+    if (nodeId == null){
+      nodeId = this.state.activeNodeId;
+    }
+    let [ node, parent ] = getNodeById(this.state.tree, null, nodeId);
 
     let dirHor = dir === 'right' || dir === 'left';
 
@@ -429,7 +446,7 @@ export class TreeLayoutWindowManager extends Component {
 
       if (neighbor != null){
         if (neighbor.kind === 'window'){
-          this.swapNodes(this.state.activeNodeId, neighbor.id);
+          this.swapNodes(nodeId, neighbor.id);
           return;
         } else {
           let add_directly_to_neighbor = neighbor.kind === parent.kind || true;
@@ -559,7 +576,12 @@ export class TreeLayoutWindowManager extends Component {
     this.moveActiveFocusInDirection('up');
   }
   moveActiveFocusInDirection(dir){ 
-    let nextId = this.getInDirection(this.state.activeNodeId, dir);
+    let nodeId = this.state.activeGroupId;
+    if (nodeId == null || nodeId === '_root' || nodeId === this.state.tree.child.id){
+      nodeId = this.state.activeNodeId;
+    }
+
+    let nextId = this.getInDirection(nodeId, dir);
     if (nextId != null){
       nextId = this.descendToWindowFromDir(nextId, dir);
       this.focusWindow(nextId);

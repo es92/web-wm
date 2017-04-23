@@ -125,10 +125,18 @@ class App extends Component {
     setTimeout(() => {
       this.wm.makeNewWindow(this.makeTestWindow());
       this.wm.makeNewWindow(this.makeTestWindow());
-      this.wm.moveActiveFocusRight()
-      this.wm.makeVerticalSplit()
+      this.wm.moveActiveFocusRight();
+      this.wm.makeVerticalSplit();
       this.wm.makeNewWindow(this.makeTestWindow());
       this.wm.makeNewWindow(this.makeTestWindow());
+      this.wm.moveActiveFocusLeft();
+      this.wm.makeNewWindow(this.makeTestWindow());
+      this.wm.moveActiveUp();
+      this.wm.moveActiveFocusDown();
+      this.wm.moveActiveFocusDown();
+      this.wm.moveActiveFocusDown();
+      this.wm.focusParentGroup();
+      this.wm.moveActiveFocusUp();
 
       //setTimeout(() => {
       //  this.wm.moveActiveLeft()
