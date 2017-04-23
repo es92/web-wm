@@ -215,7 +215,9 @@ export class TreeLayoutWindowManager extends Component {
     let parentId;
     if (node.kind === 'root'){
       parentId = node.id;
-      this._closeId(node.child.id);
+      if (node.child != null){
+        this._closeId(node.child.id);
+      }
     } else if (parent.kind === 'root'){
       parent.child = null;
       parentId = parent.id;
@@ -258,7 +260,16 @@ export class TreeLayoutWindowManager extends Component {
       this.setState({ tree: this.state.tree, activeGroupId: newNode.id });
     }
     else if (parent.kind === 'root') {
-      throw Error('nyi');
+      const newNode = {
+        kind: kind,
+        lastActiveTime: -1,
+        sizes: [ 1 ],
+        id: genUUID(),
+        children: [ node ],
+      }
+      parent.child = newNode;
+      this.setState({ tree: this.state.tree, activeGroupId: newNode.id });
+
     }
   }
   toggleCurrentOrientation() {

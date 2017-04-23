@@ -123,35 +123,7 @@ class App extends Component {
     });
 
     setTimeout(() => {
-      this.wm.makeNewWindow(this.makeTestWindow());
-      this.wm.makeNewWindow(this.makeTestWindow());
-      this.wm.moveActiveFocusRight();
-      this.wm.makeVerticalSplit();
-      this.wm.makeNewWindow(this.makeTestWindow());
-      this.wm.makeNewWindow(this.makeTestWindow());
-      this.wm.moveActiveFocusLeft();
-      this.wm.makeNewWindow(this.makeTestWindow());
-      this.wm.moveActiveUp();
-      this.wm.moveActiveFocusDown();
-      this.wm.moveActiveFocusDown();
-      this.wm.moveActiveFocusDown();
-      this.wm.focusParentGroup();
-      this.wm.moveActiveFocusUp();
 
-      //setTimeout(() => {
-      //  this.wm.moveActiveLeft()
-      //  setTimeout(() => {
-      //    this.wm.moveActiveRight()
-      //  }, 1000);
-      //}, 1000);
-
-      //this.wm.makeNewWindow(this.makeTestWindow());
-      //this.wm.changeSizeByPixels(this.wm.state.activeNodeId, 10, 10, 10, 10);
-      //this.wm.closeKey('_root');
-      //setTimeout(() => {
-      //  this.wm.makeNewWindow(this.makeTestWindow());
-      //  //this.wm.moveActiveRight()
-      //}, 2000);
     }, 500);
   }
   render() {
