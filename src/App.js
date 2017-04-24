@@ -12,7 +12,8 @@ import { TreeLayoutWindowManager } from './WindowManager.js'
 class App extends Component {
   makeTestWindow(){
     let key = '' + Math.random();
-    let color = 'rgb(' + Math.floor(Math.random()*255) + ',' + Math.floor(Math.random()*255) + ',' + Math.floor(Math.random()*255) + ')';
+    let R = 128;
+    let color = 'rgb(' + Math.floor(Math.random()*R) + ',' + Math.floor(Math.random()*R) + ',' + Math.floor(Math.random()*R) + ')';
 
     let onFocus = (key, e) => {
       this.wm.focusWindow(key);
@@ -63,7 +64,11 @@ class App extends Component {
         let dx = e.clientX - last_mouse_x;
         let dy = e.clientY - last_mouse_y;
 
-        this.wm.changeSizeByPixels(active_node_id, dx, dy, e.clientX, e.clientY);
+        if (e.button === 2){
+          this.wm.changeSizeByPixels(active_node_id, dx, dy, e.clientX, e.clientY);
+        } else if (e.button === 0) {
+          this.wm.swapToPixels(active_node_id, e.clientX, e.clientY);
+        }
 
         last_mouse_x = e.clientX;
         last_mouse_y = e.clientY;
@@ -123,6 +128,8 @@ class App extends Component {
     });
 
     setTimeout(() => {
+        this.wm.makeNewWindow(this.makeTestWindow())
+        this.wm.makeNewWindow(this.makeTestWindow())
 
     }, 500);
   }

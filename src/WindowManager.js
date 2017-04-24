@@ -335,6 +335,22 @@ export class TreeLayoutWindowManager extends Component {
     child.lastActiveTime = this.state.lastActiveTime + 1;
     this.setState({ activeNodeId: childId, activeGroupId: null, tree: this.state.tree, lastActiveTime: this.state.lastActiveTime + 1 });
   }
+  swapToPixels(node_id, x, y){
+    let [ windowData, _ ] = treeToData(this.props.config, this.state.tree, '_root', null, 0);
+    let wmHeight = this._dom_node.clientHeight;
+    let wmWidth = this._dom_node.clientWidth;
+
+    let contains = Object.keys(windowData).map((k) => {
+      let [ node, _ ] = getNodeById(this.state.tree, null, k);
+      let [ ax, ay, aw, ah ] = getNodeSize(node, windowData, wmWidth, wmHeight);
+      return [ x >= ax && 
+               x <= ax + aw && 
+               y >= ay && 
+               y <= ay + ah, k ];
+    });
+    let target_id = contains.filter(([ c, id ]) => c)[0][1];
+    this.swapNodes(node_id, target_id);
+  }
   changeSizeByPixels(node_id, dx, dy, x, y){
     let [ node, parent ] = getNodeById(this.state.tree, null, node_id);
 
@@ -557,6 +573,9 @@ export class TreeLayoutWindowManager extends Component {
     }
   }
   swapNodes(id1, id2){
+    if (id1 === id2){
+      return
+    }
     let [ node1, parent1 ] = getNodeById(this.state.tree, null, id1);
     let [ node2, parent2 ] = getNodeById(this.state.tree, null, id2);
     if (    (parent1.kind === 'vertical' || parent1.kind === 'horizontal' || parent1.kind === 'tab')
