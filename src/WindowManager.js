@@ -96,7 +96,9 @@ export class TreeLayoutWindowManager extends Component {
   }
   simplify(parent, node){
     if (node.kind === 'root'){
-      this.simplify(node, node.child);
+      if (node.child != null){
+        this.simplify(node, node.child);
+      }
     } else if (node.kind === 'horizontal' || node.kind === 'vertical' || node.kind === 'tab'){
       if (node.children.length === 1){
         if (parent.kind === 'root'){
@@ -206,6 +208,8 @@ export class TreeLayoutWindowManager extends Component {
       console.log(node);
       throw new Error('nyi');
     }
+
+    this.simplify(null, this.state.tree);
 
     this.setState({ tree: this.state.tree, activeNodeId: activeId, activeGroupId: null});
   }
@@ -449,6 +453,20 @@ export class TreeLayoutWindowManager extends Component {
 
     let dirHor = dir === 'right' || dir === 'left';
 
+    function rmChild(parent, child){
+      let idx = parent.children.indexOf(node);
+      parent.children.splice(idx, 1);
+      let rm_size = parent.sizes[idx];
+      parent.sizes.splice(idx, 1);
+      parent.sizes = parent.sizes.map((s) => s + rm_size/(parent.children.length));
+    }
+
+    function addChild(parent, node_idx, node){
+      parent.children.splice(node_idx, 0, node);
+      parent.sizes = parent.sizes.map((s) => { return s*(parent.children.length-1)/(parent.children.length) });
+      parent.sizes.splice(node_idx, 0, 1./parent.children.length);
+    }
+
     if (parent.children != null){
       let parentHor = parent.kind === 'horizontal' || parent.kind === 'tab';
 
@@ -456,6 +474,7 @@ export class TreeLayoutWindowManager extends Component {
       let len = parent.children.length;
 
       let neighbor;
+
 
       if (dirHor && parentHor){
         if (dir === 'left' && idx > 0){
@@ -473,33 +492,49 @@ export class TreeLayoutWindowManager extends Component {
 
       if (neighbor != null){
         if (neighbor.kind === 'window'){
-          this.swapNodes(nodeId, neighbor.id);
+
+          if (parent.children.length === 2){
+            this.swapNodes(node.id, neighbor.id);
+            return
+          } else if (parent.children.length === 1){
+            return;
+          }
+
+          let idx = parent.children.indexOf(node);
+          rmChild(parent, node);
+
+          idx = parent.children.indexOf(neighbor);
+
+          let kind = !dirHor ? 'horizontal' : 'vertical';
+
+          const newNode = {
+            kind: kind,
+            lastActiveTime: -1,
+            sizes: [ .5, .5 ],
+            id: genUUID(),
+            children: [ node, neighbor ],
+          }
+
+          parent.children[idx] = newNode;
+
+          this.simplify(null, this.state.tree);
+
+          this.setState({ tree: this.state.tree });
+
           return;
         } else {
           let add_directly_to_neighbor = neighbor.kind === parent.kind || true;
           if (add_directly_to_neighbor){
             let idx = parent.children.indexOf(node);
-            parent.children.splice(idx, 1);
-            let rm_size = parent.sizes[idx];
-            parent.sizes.splice(idx, 1);
-            parent.sizes = parent.sizes.map((s) => s + rm_size/(parent.children.length));
+            rmChild(parent, node);
 
             let end = dir === 'left' || dir === 'up';
             if (neighbor.kind !== parent.kind){
               end = false;
             }
 
-            if (end){
-              neighbor.children.push(node);
-            } else {
-              neighbor.children.unshift(node);
-            }
-            neighbor.sizes = neighbor.sizes.map((s) => { return s*(neighbor.children.length-1)/(neighbor.children.length) });
-            if (end){
-              neighbor.sizes.push(1./neighbor.children.length);
-            } else {
-              neighbor.sizes.unshift(1./neighbor.children.length);
-            }
+            idx = end ? neighbor.children.length : 0;
+            addChild(neighbor, idx, node);
 
             this.simplify(null, this.state.tree);
 
@@ -513,6 +548,10 @@ export class TreeLayoutWindowManager extends Component {
     }
 
     let [ _, grandparent ] = getNodeById(this.state.tree, null, parent.id);
+
+    if (parent.kind === 'root'){
+      return;
+    }
 
     if (grandparent.kind === 'root'){
 
@@ -530,12 +569,7 @@ export class TreeLayoutWindowManager extends Component {
         children: children,
       }
 
-      let idx = parent.children.indexOf(node);
-      parent.children.splice(idx, 1);
-
-      let rm_size = parent.sizes[idx];
-      parent.sizes.splice(idx, 1);
-      parent.sizes = parent.sizes.map((s) => s + rm_size/(parent.children.length));
+      rmChild(parent, node);
 
       grandparent.child = newNode;
 
@@ -545,26 +579,15 @@ export class TreeLayoutWindowManager extends Component {
     } else {
       let neighbor = grandparent;
 
-      let idx = parent.children.indexOf(node);
-      parent.children.splice(idx, 1);
-      let rm_size = parent.sizes[idx];
-      parent.sizes.splice(idx, 1);
-      parent.sizes = parent.sizes.map((s) => s + rm_size/(parent.children.length));
+      rmChild(parent, node);
 
       let end = dir === 'right' || dir === 'down';
 
       let parent_idx = grandparent.children.indexOf(parent);
 
-      let node_idx;
-      if (end){
-        node_idx = parent_idx+1;
-      } else {
-        node_idx = parent_idx;
-      }
+      let node_idx = end ? parent_idx+1 : parent_idx;
 
-      neighbor.children.splice(node_idx, 0, node);
-      neighbor.sizes = neighbor.sizes.map((s) => { return s*(neighbor.children.length-1)/(neighbor.children.length) });
-      neighbor.sizes.splice(node_idx, 0, 1./neighbor.children.length);
+      addChild(neighbor, node_idx, node);
 
       this.simplify(null, this.state.tree);
 

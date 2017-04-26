@@ -133,9 +133,7 @@ class App extends Component {
 
     setTimeout(() => {
         this.wm.makeNewWindow(this.makeTestWindow())
-        this.wm.makeNewWindow(this.makeTestWindow())
-        this.wm.makeNewWindow(this.makeTestWindow())
-        this.wm.switchToTabs()
+        this.wm.closeActive()
     }, 500);
   }
   render() {
