@@ -146,16 +146,28 @@ function tabifyPositions(config, node, activeNodeId, activeGroupId, onSwitchTab,
         activeTab: mostRecentChild,
         internal: true,
         tabChildren: iterKeys(subSubWindowData),
+        //position: {
+        //  x: 1.0*i / subWindowData.length,
+        //  y: 0.0,
+        //  w: 1.0 / subWindowData.length,
+        //  h: 0.0,
+        //},
+        //pposition: {
+        //  x: 0,
+        //  y: 0,
+        //  w: 0,
+        //  h: tabHeight,
+        //},
         position: {
-          x: 1.0*i / subWindowData.length,
+          x: 0.0,
           y: 0.0,
-          w: 1.0 / subWindowData.length,
+          w: 0.0,
           h: 0.0,
         },
         pposition: {
-          x: 0,
+          x: 1.0*i*tabHeight,
           y: 0,
-          w: 0,
+          w: tabHeight,
           h: tabHeight,
         },
         lastActiveTime: -1,
@@ -174,15 +186,52 @@ function tabifyPositions(config, node, activeNodeId, activeGroupId, onSwitchTab,
 
       let r = Math.random();
       windowData[r] = tabSwitcher;
+
+      let tabFontSize = tabHeight*3/4;
       if (i === mostRecentChild) {
-        children.push(<div key={r} style={{ height: tabHeight, backgroundColor: config.activeColor, color: 'white' }}>{'\u00A0'}</div>);
+        //let contents = '\u00A0';
+        let contents = i
+        children.push(<div key={r} style={{ height: tabHeight, backgroundColor: config.activeColor, color: 'white', fontSize: tabFontSize, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{contents}</div>);
       } else {
-        children.push(<div key={r} onClick={switchTab} style={{ height: tabHeight, backgroundColor: config.inactiveColor, color: 'white' }}>{'\u00A0'}</div>);
+        //let contents = '\u00A0';
+        let contents = i
+        children.push(<div key={r} onClick={switchTab} style={{ height: tabHeight, backgroundColor: config.inactiveColor, color: 'white', fontSize: tabFontSize, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{contents}</div>);
       }
     });
 
 
+    let offset = subWindowData.length*tabHeight;
+    let r = Math.random();
+    windowData[r] = {
+      internal: true,
+      position: {
+        x: 0.0,
+        y: 0.0,
+        w: 1.0,
+        h: 0.0,
+      },
+      pposition: {
+        x: offset,
+        y: 0.0,
+        w: -offset,
+        h: tabHeight,
+      },
+      lastActiveTime: -1,
+      hidden: false,
+      border: {
+        top: '',
+        bottom: '',
+        left: '',
+        right: '',
+      }
+    };
+    let contents = '\u00A0';
+    children.push(<div key={r} style={{ height: tabHeight, backgroundColor: config.inactiveColor, color: 'white' }}>{contents}</div>);
+
   }
+
+
+
 
   let mostRecentSubWindowData = subWindowData.splice(mostRecentChild, 1)[0];
 

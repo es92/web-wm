@@ -593,6 +593,25 @@ export class TreeLayoutWindowManager extends Component {
     }
     this.setState({ tree: this.state.tree, lastActiveTime: this.state.lastActiveTime + 2 });
   }
+  moveActiveFocusTabIndex(idx){
+    let nodeId = this.state.activeGroupId;
+    if (nodeId == null || nodeId === '_root'){
+      nodeId = this.state.activeNodeId;
+    }
+
+    this.moveActiveFocusTabIndexParent(nodeId, idx);
+
+  }
+  moveActiveFocusTabIndexParent(nodeId, idx){
+    let [ node, parent ] = getNodeById(this.state.tree, null, nodeId);
+
+    if (node.kind === 'tab'){
+      idx = Math.min(idx, node.children.length-1);
+      this.focusWindow(node.children[idx].id);
+    } else if (node.kind !== 'root'){
+      this.moveActiveFocusTabIndexParent(parent.id, idx);
+    }
+  }
   moveActiveFocusRight(){
     this.moveActiveFocusInDirection('right');
   }
@@ -619,7 +638,9 @@ export class TreeLayoutWindowManager extends Component {
   }
   getInDirection(nodeId, dir){
     let [ node, parent ] = getNodeById(this.state.tree, null, nodeId);
-    if (parent.kind === 'horizontal' || parent.kind === 'tab'){
+    if (parent.kind === 'tab'){
+      return this.getInDirection(parent.id, dir);
+    } else if (parent.kind === 'horizontal'){
 
       let idx = parent.children.indexOf(node);
 
@@ -667,7 +688,11 @@ export class TreeLayoutWindowManager extends Component {
 
     if (node.kind === 'window'){
       return node.id;
-    } else if (node.kind === 'horizontal' || node.kind === 'tab'){
+    } else if (node.kind === 'tab'){
+      let lastActives = node.children.map((c) => c.lastActiveTime);
+      let idx = lastActives.indexOf(Math.max.apply(Math, lastActives));
+      return this.descendToWindowFromDir(node.children[idx].id, dir);
+    } else if (node.kind === 'horizontal'){
       if (dir === 'right'){
         return this.descendToWindowFromDir(node.children[0].id, dir);
       } else if (dir === 'left'){
@@ -689,106 +714,6 @@ export class TreeLayoutWindowManager extends Component {
       }
     }
     return nodeId;
-  }
-  _getInDirection(dir){
-    let [ windowData, children ] = treeToData(this.props.config, this.state.tree, this.state.activeNodeId, null, 0);
-    let wmHeight = this._dom_node.clientHeight;
-    let wmWidth = this._dom_node.clientWidth;
-    let [ node, _ ] = getNodeById(this.state.tree, null, this.state.activeNodeId);
-
-    let [ ax, ay, aw, ah ] = getNodeSize(node, windowData, wmWidth, wmHeight);
-    let acx = ax + aw/2;
-    let acy = ay + ah/2;
-
-    let notDistantTab = (child) => {
-      let data = windowData[child.key];
-      return !data.isTab || (Math.abs(data.tabPosition - data.activeTab) <= 1 && data.tabPosition !== data.activeTab);
-    };
-
-    let dist_key = children.filter((child) => !windowData[child.key].hidden)
-                           .filter((child) => notDistantTab(child))
-                           .filter((child) => child.key !== this.state.activeNodeId)
-                           .map((child) => {
-                             let [ x, y, w, h ] = getNodeSize({ kind: 'window', id: child.key }, windowData, wmWidth, wmHeight);
-                             let tabData;
-                             if (windowData[child.key].isTab){
-                               const tabPosition = windowData[child.key].tabPosition;
-                               const activeTab = windowData[child.key].activeTab;
-                               tabData = {
-                                 rightOfActive: tabPosition > activeTab,
-                                 leftOfActive: tabPosition < activeTab,
-                               }
-                             } else {
-                               tabData = null;
-                             }
-                             const depth = windowData[child.key].depth;
-                             let cx = x + w/2;
-                             let cy = y + h/2;
-                             let dist = Math.sqrt((acx - cx)*(acx - cx) + (acy - cy)*(acy - cy));
-                             let angle = Math.atan2(-(cy - acy), cx - acx)*180/Math.PI;
-                             if (angle < 0)
-                               angle += 360;
-                             return { tabData: tabData, key: child.key, dist: dist, angle: angle, depth: depth }
-                           })
-                           .filter(({ tabData, key, dist, angle }) => {
-                             if (tabData != null){
-                               if (dir === 'left'){
-                                 return tabData.leftOfActive;
-                               } else if (dir === 'right'){
-                                 return tabData.rightOfActive;
-                               }
-                             }
-                             return true;
-                           })
-                           .filter(({ tabData, key, dist, angle }) => {
-                             if (tabData == null){
-                               if (dir === 'right') {
-                                 return angle > 270 || angle < 90;
-                               } else if (dir === 'left'){
-                                 return angle < 270 && angle > 90;
-                               } else if (dir === 'up'){
-                                 return angle < 180;
-                               } else if (dir === 'down'){
-                                 return angle > 180;
-                               }
-                             }
-                             return true;
-                           })
-                           .sort(function(a, b){
-                             if (a.depth < b.depth){
-                               return 1;
-                             } else if (a.depth > b.depth){
-                               return -1;
-                             } else if (a.dist < b.dist){
-                               return -1;
-                             } else if (a.dist > b.dist){
-                               return 1;
-                             } else {
-                               return 0;
-                             }
-                           });
-
-    //console.log(dist_key);
-
-    if (dist_key.length > 0){
-      let nextId = dist_key[0].key;
-
-      if (windowData[nextId].internal && windowData[nextId].tabChildren.length > 0){
-        let i = 0
-        let idir = 1;
-        if (dir === 'left'){
-          i = windowData[nextId].tabChildren.length-1
-          idir = -1;
-        }
-        while (getNodeById(this.state.tree, null, windowData[nextId].tabChildren[i]) == null){
-          i += idir;
-        }
-        nextId = windowData[nextId].tabChildren[i];
-      }
-      return [ nextId, windowData ];
-    } else {
-      return [ null, null ];
-    }
   }
   render() {
     return (

@@ -122,7 +122,11 @@ class App extends Component {
         this.wm.moveActiveUp()
       } else if (e.key === 'E'){
         this.wm.moveActiveDown()
+
+      } else if (e.key >= '1' && e.key <= '9'){
+        this.wm.moveActiveFocusTabIndex(parseInt(e.key, 10)-1);
       }
+
 
       return false;
     });
@@ -130,7 +134,8 @@ class App extends Component {
     setTimeout(() => {
         this.wm.makeNewWindow(this.makeTestWindow())
         this.wm.makeNewWindow(this.makeTestWindow())
-
+        this.wm.makeNewWindow(this.makeTestWindow())
+        this.wm.switchToTabs()
     }, 500);
   }
   render() {
@@ -140,7 +145,7 @@ class App extends Component {
       inactiveColor: '#112',
       groupHighlightColor: '#55b',
       windowBarHeight: '4px',
-      tabHeightPx: 10,
+      tabHeightPx: 20,
     }
 
     return (<TreeLayoutWindowManager ref={ (r) => this.wm = r } maybeGetWindow={this.maybeGetWindow} config={config}/>);

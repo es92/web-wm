@@ -1,6 +1,7 @@
 
 features
-  switch tabs to workspace style numbers
-  workspace support
+  workspace support 
+    - move to number
+    - create tab + number if not yet created
   shared cross tab state? Is this possible?
   normal floating layout / manager
