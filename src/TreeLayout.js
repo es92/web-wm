@@ -190,11 +190,11 @@ function tabifyPositions(config, node, activeNodeId, activeGroupId, onSwitchTab,
       let tabFontSize = tabHeight*3/4;
       if (i === mostRecentChild) {
         //let contents = '\u00A0';
-        let contents = i
+        let contents = i+1;
         children.push(<div key={r} style={{ height: tabHeight, backgroundColor: config.activeColor, color: 'white', fontSize: tabFontSize, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{contents}</div>);
       } else {
         //let contents = '\u00A0';
-        let contents = i
+        let contents = i+1;
         children.push(<div key={r} onClick={switchTab} style={{ height: tabHeight, backgroundColor: config.inactiveColor, color: 'white', fontSize: tabFontSize, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{contents}</div>);
       }
     });
